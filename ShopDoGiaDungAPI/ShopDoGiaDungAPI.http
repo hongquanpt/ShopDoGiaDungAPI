@@ -1,0 +1,6 @@
+@ShopDoGiaDungAPI_HostAddress = http://localhost:5222
+
+GET {{ShopDoGiaDungAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
