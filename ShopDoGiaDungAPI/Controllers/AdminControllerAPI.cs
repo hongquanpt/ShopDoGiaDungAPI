@@ -344,112 +344,115 @@ namespace ShopDoGiaDungAPI.Controllers
                 totalItemCount = totalItemCount
             });
         }
-        [HttpPost("add")]
-        public async Task<IActionResult> AddProduct([FromForm] string TenSP, [FromForm] string MoTa, [FromForm] long GiaTien, [FromForm] int SoLuongTrongKho, [FromForm] IFormFile image1, [FromForm] IFormFile image2, [FromForm] IFormFile image3, [FromForm] IFormFile image4, [FromForm] IFormFile image5, [FromForm] IFormFile image6, [FromForm] string DanhMuc, [FromForm] string Hang)
+        #region Quản lý hãng (Hangsanxuat)
+
+        // GET: api/Admin/QuanLyHang
+        [HttpGet("hangs")]
+        public IActionResult QuanLyHang(string tenhang = "", int mahang = 0, int page = 1, int pageSize = 10)
         {
-            try
+            var query = _context.Hangsanxuats.AsQueryable(); // Chuyển đổi sang IQueryable
+
+            if (!string.IsNullOrEmpty(tenhang))
             {
-                var spmoi = new Sanpham
-                {
-                    TenSp = TenSP,
-                    MoTa = MoTa,
-                    GiaTien = GiaTien,
-                    SoLuongTrongKho = SoLuongTrongKho,
-                    SoLuongDaBan = 0
-                };
-
-                // Lưu các tệp hình ảnh vào cơ sở dữ liệu dưới dạng byte[]
-                if (image1 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image1.CopyToAsync(memoryStream);
-                        spmoi.Image1 = memoryStream.ToArray();
-                    }
-                }
-
-                if (image2 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image2.CopyToAsync(memoryStream);
-                        spmoi.Image2 = memoryStream.ToArray();
-                    }
-                }
-
-                if (image3 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image3.CopyToAsync(memoryStream);
-                        spmoi.Image3 = memoryStream.ToArray();
-                    }
-                }
-
-                if (image4 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image4.CopyToAsync(memoryStream);
-                        spmoi.Image4 = memoryStream.ToArray();
-                    }
-                }
-
-                if (image5 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image5.CopyToAsync(memoryStream);
-                        spmoi.Image5 = memoryStream.ToArray();
-                    }
-                }
-
-                if (image6 != null)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await image6.CopyToAsync(memoryStream);
-                        spmoi.Image6 = memoryStream.ToArray();
-                    }
-                }
-
-                // Gán Danh Mục và Hãng sản xuất
-                var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.TenDanhMuc == DanhMuc);
-                if (dm != null)
-                {
-                    spmoi.MaDanhMuc = dm.MaDanhMuc;
-                }
-                else
-                {
-                    return BadRequest(new { message = "Danh mục không hợp lệ" });
-                }
-
-                var hang = _context.Hangsanxuats.FirstOrDefault(s => s.TenHang == Hang);
-                if (hang != null)
-                {
-                    spmoi.MaHang = hang.MaHang;
-                }
-                else
-                {
-                    return BadRequest(new { message = "Hãng sản xuất không hợp lệ" });
-                }
-
-                _context.Sanphams.Add(spmoi);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Thêm sản phẩm thành công" });
+                query = query.Where(dm => dm.TenHang.Contains(tenhang));
             }
-            catch (Exception ex)
+
+            if (mahang != 0)
             {
-                // Ghi log lỗi để tìm hiểu lỗi cụ thể
-                Console.WriteLine($"Lỗi xảy ra: {ex.Message}");
-                return StatusCode(500, new { message = "Có lỗi xảy ra khi thêm sản phẩm", error = ex.Message });
+                query = query.Where(item => item.MaHang == mahang);
+            }
+
+            var model = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalItemCount = query.Count();
+
+            return Ok(new
+            {
+                data = model,
+                totalItems = totalItemCount,
+                pageStartItem = (page - 1) * pageSize + 1,
+                pageEndItem = Math.Min(page * pageSize, totalItemCount),
+                page = page,
+                pageSize = pageSize,
+                tenhang = tenhang,
+                mahang = mahang
+            });
+        }
+
+        // POST: api/Admin/hangs
+        [HttpPost("hangs")]
+        public IActionResult ThemHang([FromBody] string tenhang)
+        {
+            var hsx = new Hangsanxuat
+            {
+                TenHang = tenhang
+            };
+            _context.Hangsanxuats.Add(hsx);
+            _context.SaveChanges();
+            return Ok(new
+            {
+                status = true
+            });
+        }
+
+        // DELETE: api/Admin/hangs/{id}
+        [HttpDelete("hangs/{id}")]
+        public IActionResult XoaHang(int id)
+        {
+            var hsx = _context.Hangsanxuats.Find(id);
+            if (hsx != null)
+            {
+                _context.Hangsanxuats.Remove(hsx);
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
             }
         }
 
+        // GET: api/Admin/hangs/{id}
+        [HttpGet("hangs/{id}")]
+        public IActionResult SuaHang(int id)
+        {
+            var model = _context.Hangsanxuats.Find(id);
+            if (model != null)
+            {
+                return Ok(model);
+            }
+            return NotFound();
+        }
 
+        // PUT: api/Admin/hangs/{id}
+        [HttpPut("hangs/{id}")]
+        public IActionResult SuaHang(int id, [FromBody] string name)
+        {
+            var hsx = _context.Hangsanxuats.Find(id);
+            if (hsx != null)
+            {
+                hsx.TenHang = name;
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
 
-
+        #endregion
 
     }
 }
