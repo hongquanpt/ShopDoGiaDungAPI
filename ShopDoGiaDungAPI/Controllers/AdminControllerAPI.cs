@@ -562,6 +562,176 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         #endregion
+        #region Quản lý đơn hàng (Donhang)
 
+        // GET: api/Admin/orders
+        [HttpGet("orders")]
+        public IActionResult QuanLyDH(int? tinhTrang = null, int page = 1, int pageSize = 5)
+        {
+            var allOrders = from a in _context.Donhangs
+                            join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                            select new MyOrder()
+                            {
+                                MaDonHang = a.MaDonHang,
+                                TongTien = a.TongTien,
+                                NguoiNhan = b.NguoiNhan,
+                                DiaChi = b.DiaChi,
+                                NgayMua = a.NgayLap,
+                                TinhTrang = a.TinhTrang
+                            };
+
+            // Lọc theo tình trạng nếu có
+            if (tinhTrang.HasValue)
+            {
+                allOrders = allOrders.Where(o => o.TinhTrang == tinhTrang.Value);
+            }
+
+            var model = allOrders.OrderByDescending(o => o.MaDonHang)
+                                  .Skip((page - 1) * pageSize)
+                                  .Take(pageSize)
+                                  .ToList();
+
+            var totalItemCount = allOrders.Count();
+
+            return Ok(new
+            {
+                data = model,
+                totalItems = totalItemCount,
+                page = page,
+                pageSize = pageSize,
+                totalPages = (totalItemCount + pageSize - 1) / pageSize
+            });
+        }
+
+        // POST: api/Admin/orders/confirm/{madh}
+        [HttpPost("orders/confirm/{madh}")]
+        public IActionResult XacNhanDH(int madh)
+        {
+            var dh = _context.Donhangs.Find(madh);
+            if (dh != null)
+            {
+                dh.TinhTrang = 2; // Xác nhận đơn hàng
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
+
+        // POST: api/Admin/orders/ship/{madh}
+        [HttpPost("orders/ship/{madh}")]
+        public IActionResult VanChuyenDH(int madh)
+        {
+            var dh = _context.Donhangs.Find(madh);
+            if (dh != null)
+            {
+                dh.TinhTrang = 3; // Đã vận chuyển
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
+
+        // POST: api/Admin/orders/cancel/{madh}
+        [HttpPost("orders/cancel/{madh}")]
+        public IActionResult HuyDH(int madh)
+        {
+            var dh = _context.Donhangs.Find(madh);
+            if (dh != null)
+            {
+                dh.TinhTrang = 4; // Đã hủy đơn hàng
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
+
+        // GET: api/Admin/orders/{id}/details
+        [HttpGet("orders/{id}/details")]
+        public IActionResult MyOrderDetail(int id)
+        {
+            var orderDetails = from a in _context.Chitietdonhangs
+                               join b in _context.Sanphams on a.MaSp equals b.MaSp
+                               where a.MaDonHang == id
+                               select new MyOrderDetail()
+                               {
+                                   MaSanPham = b.MaSp,
+                                   TenSP = b.TenSp,
+                                   Image = b.Image1,
+                                   GiaBan = b.GiaTien,
+                                   SoLuong = a.SoLuongMua,
+                                   ThanhTien = b.GiaTien * a.SoLuongMua
+                               };
+
+            var result = orderDetails.ToList();
+            if (result.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        #endregion
+        #region Thống kê doanh số bán ra
+
+        // POST: api/Admin/statistics
+        [HttpPost("statistics")]
+        public IActionResult GetSalesStatistics([FromBody] int year)
+        {
+            var orders = _context.Donhangs
+                                 .Where(s => s.NgayLap.HasValue && s.NgayLap.Value.Year == year)
+                                 .ToList();
+
+            var salesStatistics = new List<ThongKeDoanhThu>();
+
+            // Khởi tạo doanh thu cho mỗi tháng
+            for (int month = 1; month <= 12; month++)
+            {
+                long? monthlyTotal = orders
+                    .Where(order => order.NgayLap.HasValue && order.NgayLap.Value.Month == month)
+                    .Sum(order => order.TongTien) ?? 0;
+
+                salesStatistics.Add(new ThongKeDoanhThu
+                {
+                    Thang = month,
+                    DoanhThu = monthlyTotal
+                });
+            }
+
+            return Ok(new
+            {
+                status = true,
+                data = salesStatistics
+            });
+        }
+
+        #endregion
     }
 }
