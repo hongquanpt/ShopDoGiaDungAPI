@@ -453,6 +453,115 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         #endregion
+        #region Quản lý danh mục (Danhmucsanpham)
+
+        // GET: api/Admin/danhmucs
+        [HttpGet("danhmucs")]
+        public IActionResult QuanLyDM(string tendm = "", int madm = 0, int page = 1, int pageSize = 10)
+        {
+            var query = _context.Danhmucsanphams.AsQueryable(); // Chuyển đổi sang IQueryable
+
+            if (!string.IsNullOrEmpty(tendm))
+            {
+                query = query.Where(dm => dm.TenDanhMuc.Contains(tendm));
+            }
+
+            if (madm != 0)
+            {
+                query = query.Where(item => item.MaDanhMuc == madm);
+            }
+
+            var model = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalItemCount = query.Count();
+
+            return Ok(new
+            {
+                data = model,
+                totalItems = totalItemCount,
+                pageStartItem = (page - 1) * pageSize + 1,
+                pageEndItem = Math.Min(page * pageSize, totalItemCount),
+                page = page,
+                pageSize = pageSize,
+                tendm = tendm,
+                madm = madm
+            });
+        }
+
+        // DELETE: api/Admin/danhmucs/{madm}
+        [HttpDelete("danhmucs/{madm}")]
+        public IActionResult XoaDM(int madm)
+        {
+            var dm = _context.Danhmucsanphams.Find(madm);
+            if (dm != null)
+            {
+                _context.Danhmucsanphams.Remove(dm);
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
+
+        // POST: api/Admin/danhmucs
+        [HttpPost("danhmucs")]
+        public IActionResult ThemDM([FromBody] string tendm)
+        {
+            var dm = new Danhmucsanpham
+            {
+                TenDanhMuc = tendm
+            };
+            _context.Danhmucsanphams.Add(dm);
+            _context.SaveChanges();
+            return Ok(new
+            {
+                status = true
+            });
+        }
+
+        // GET: api/Admin/danhmucs/{id}
+        [HttpGet("danhmucs/{id}")]
+        public IActionResult SuaDM(int id)
+        {
+            var dm = _context.Danhmucsanphams.Find(id);
+            if (dm != null)
+            {
+                return Ok(dm);
+            }
+            return NotFound();
+        }
+
+        // PUT: api/Admin/danhmucs/{id}
+        [HttpPut("danhmucs/{id}")]
+        public IActionResult SuaDM(int id, [FromBody] string name)
+        {
+            var dm = _context.Danhmucsanphams.Find(id);
+            if (dm != null)
+            {
+                dm.TenDanhMuc = name;
+                _context.SaveChanges();
+                return Ok(new
+                {
+                    status = true
+                });
+            }
+            else
+            {
+                return NotFound(new
+                {
+                    status = false
+                });
+            }
+        }
+
+        #endregion
 
     }
 }
