@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.DTO;
+using Microsoft.EntityFrameworkCore;
+using ShopDoGiaDungAPI.Services;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -10,9 +12,9 @@ namespace ShopDoGiaDungAPI.Controllers
     [ApiController]
     public class AdminControllerAPI : ControllerBase
     {
-        private readonly OnlineShop2Context _context;
+        private readonly OnlineShopContext _context;
 
-        public AdminControllerAPI(OnlineShop2Context context)
+        public AdminControllerAPI(OnlineShopContext context)
         {
             _context = context;
         }
@@ -214,11 +216,11 @@ namespace ShopDoGiaDungAPI.Controllers
             }
         }
 
-        //[HttpPost("convert-images")]
-        //public IActionResult ConvertImagesToBinary()
+        //[HttpPost("convert-Anhs")]
+        //public IActionResult ConvertAnhsToBinary()
         //{
         //    // Đường dẫn tĩnh của thư mục chứa hình ảnh
-        //    string basePath = @"C:\Users\Admin\Desktop\QuanLyShopDoGiaDung\wwwroot\Admin\images";
+        //    string basePath = @"C:\Users\Admin\Desktop\QuanLyShopDoGiaDung\wwwroot\Admin\Anhs";
 
         //    // Lấy danh sách tất cả sản phẩm có tên tệp ảnh trong các cột Anh1, Anh2, ..., Anh6
         //    var sanphams = _context.Sanphams.ToList();
@@ -227,69 +229,69 @@ namespace ShopDoGiaDungAPI.Controllers
         //    {
         //        try
         //        {
-        //            // Xử lý ảnh 1 (Anh1 -> Image1)
+        //            // Xử lý ảnh 1 (Anh1 -> Anh1)
         //            if (!string.IsNullOrEmpty(sanpham.Anh1))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh1);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh1);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image1 = imageBytes; // Gán dữ liệu ảnh 1 vào Image1
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh1 = AnhBytes; // Gán dữ liệu ảnh 1 vào Anh1
         //                }
         //            }
 
-        //            // Xử lý ảnh 2 (Anh2 -> Image2)
+        //            // Xử lý ảnh 2 (Anh2 -> Anh2)
         //            if (!string.IsNullOrEmpty(sanpham.Anh2))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh2);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh2);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image2 = imageBytes; // Gán dữ liệu ảnh 2 vào Image2
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh2 = AnhBytes; // Gán dữ liệu ảnh 2 vào Anh2
         //                }
         //            }
 
-        //            // Xử lý ảnh 3 (Anh3 -> Image3)
+        //            // Xử lý ảnh 3 (Anh3 -> Anh3)
         //            if (!string.IsNullOrEmpty(sanpham.Anh3))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh3);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh3);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image3 = imageBytes; // Gán dữ liệu ảnh 3 vào Image3
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh3 = AnhBytes; // Gán dữ liệu ảnh 3 vào Anh3
         //                }
         //            }
 
-        //            // Xử lý ảnh 4 (Anh4 -> Image4)
+        //            // Xử lý ảnh 4 (Anh4 -> Anh4)
         //            if (!string.IsNullOrEmpty(sanpham.Anh4))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh4);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh4);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image4 = imageBytes; // Gán dữ liệu ảnh 4 vào Image4
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh4 = AnhBytes; // Gán dữ liệu ảnh 4 vào Anh4
         //                }
         //            }
 
-        //            // Xử lý ảnh 5 (Anh5 -> Image5)
+        //            // Xử lý ảnh 5 (Anh5 -> Anh5)
         //            if (!string.IsNullOrEmpty(sanpham.Anh5))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh5);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh5);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image5 = imageBytes; // Gán dữ liệu ảnh 5 vào Image5
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh5 = AnhBytes; // Gán dữ liệu ảnh 5 vào Anh5
         //                }
         //            }
 
-        //            // Xử lý ảnh 6 (Anh6 -> Image6)
+        //            // Xử lý ảnh 6 (Anh6 -> Anh6)
         //            if (!string.IsNullOrEmpty(sanpham.Anh6))
         //            {
-        //                string fullImagePath = Path.Combine(basePath, sanpham.Anh6);
-        //                if (System.IO.File.Exists(fullImagePath))
+        //                string fullAnhPath = Path.Combine(basePath, sanpham.Anh6);
+        //                if (System.IO.File.Exists(fullAnhPath))
         //                {
-        //                    var imageBytes = System.IO.File.ReadAllBytes(fullImagePath);
-        //                    sanpham.Image6 = imageBytes; // Gán dữ liệu ảnh 6 vào Image6
+        //                    var AnhBytes = System.IO.File.ReadAllBytes(fullAnhPath);
+        //                    sanpham.Anh6 = AnhBytes; // Gán dữ liệu ảnh 6 vào Anh6
         //                }
         //            }
         //        }
@@ -304,46 +306,173 @@ namespace ShopDoGiaDungAPI.Controllers
 
         //    return Ok(new { message = "Chuyển đổi hình ảnh thành công" });
         //}
-        [HttpGet("products")]
-        public IActionResult GetProducts(int page = 1, int pageSize = 5)
+        // GET: api/Product
+        [HttpGet("QuanLySP")]
+        public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 5)
         {
-            var query = from sp in _context.Sanphams
-                        join h in _context.Hangsanxuats on sp.MaHang equals h.MaHang
-                        join dm in _context.Danhmucsanphams on sp.MaDanhMuc equals dm.MaDanhMuc
-                        select new SanPhamct
-                        {
-                            MaSp = sp.MaSp,
-                            TenSp = sp.TenSp,
-                            MoTa = sp.MoTa,
-                            Image1 = sp.Image1 ,
-                            Image2 = sp.Image2,
-                            Image3 = sp.Image3,
-                            Image4 = sp.Image4,
-                            Image5 = sp.Image5,
-                            Image6 = sp.Image6,
-                            SoLuongDaBan = sp.SoLuongDaBan,
-                            SoLuongTrongKho = sp.SoLuongTrongKho,
-                            GiaTien = sp.GiaTien,
-                            Hang = h.TenHang,
-                            DanhMuc = dm.TenDanhMuc,
-                            MaH = h.MaHang,
-                            MaDM = dm.MaDanhMuc,
-                        };
+            // Lấy toàn bộ sản phẩm không áp dụng bộ lọc
+            IQueryable<SanPhamct> query = from sp in _context.Sanphams
+                                          join h in _context.Hangsanxuats on sp.MaHang equals h.MaHang
+                                          join dm in _context.Danhmucsanphams on sp.MaDanhMuc equals dm.MaDanhMuc
+                                          select new SanPhamct
+                                          {
+                                              MaSp = sp.MaSp,
+                                              TenSp = sp.TenSp,
+                                              MoTa = sp.MoTa,
+                                              Anh1 = sp.Anh1,
+                                              Anh2 = sp.Anh2,
+                                              Anh3 = sp.Anh3,
+                                              Anh4 = sp.Anh4,
+                                              Anh5 = sp.Anh5,
+                                              Anh6 = sp.Anh6,
+                                              SoLuongDaBan = sp.SoLuongDaBan,
+                                              SoLuongTrongKho = sp.SoLuongTrongKho,
+                                              GiaTien = sp.GiaTien,
+                                              Hang = h.TenHang,
+                                              DanhMuc = dm.TenDanhMuc,
+                                              MaH = h.MaHang,
+                                              MaDM = dm.MaDanhMuc
+                                          };
 
-            var totalItemCount = query.Count();
-            var model = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            // Phân trang
+            var totalItemCount = await query.CountAsync();
+            var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-            // Trả về kết quả phân trang
             return Ok(new
             {
-                data = model,
-                pageStartItem = (page - 1) * pageSize + 1,
-                pageEndItem = Math.Min(page * pageSize, totalItemCount),
+                sanpham = model,
+                totalItems = totalItemCount,
                 page = page,
-                pageSize = pageSize,
-                totalItemCount = totalItemCount
+                pageSize = pageSize
             });
         }
+
+        // POST: api/Product/ThemSP
+        [HttpPost("ThemSP")]
+        public async Task<IActionResult> ThemSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] string DanhMuc, [FromForm] string Hang, [FromServices] MinioService minioService)
+        {
+            // Lưu ảnh lên MinIO
+            for (int i = 0; i < images.Length && i < 6; i++)
+            {
+                if (images[i] != null && images[i].Length > 0)
+                {
+                    // Tải ảnh lên MinIO và nhận URL của ảnh
+                    string imageUrl = await minioService.UploadFileAsync(images[i]);
+
+                    // Lưu URL vào các trường ảnh tương ứng
+                    switch (i)
+                    {
+                        case 0: spmoi.Anh1 = imageUrl; break;
+                        case 1: spmoi.Anh2 = imageUrl; break;
+                        case 2: spmoi.Anh3 = imageUrl; break;
+                        case 3: spmoi.Anh4 = imageUrl; break;
+                        case 4: spmoi.Anh5 = imageUrl; break;
+                        case 5: spmoi.Anh6 = imageUrl; break;
+                    }
+                }
+            }
+
+            // Lưu danh mục và hãng
+            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.TenDanhMuc == DanhMuc);
+            if (dm != null) spmoi.MaDanhMuc = dm.MaDanhMuc;
+
+            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.TenHang == Hang);
+            if (hang != null) spmoi.MaHang = hang.MaHang;
+
+            _context.Sanphams.Add(spmoi);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { status = true });
+        }
+
+
+        // DELETE: api/Product/XoaSP/{maSP}
+        [HttpDelete("XoaSP/{maSP}")]
+        public async Task<IActionResult> XoaSP(int maSP, [FromServices] MinioService minioService)
+        {
+            var sp = await _context.Sanphams.FindAsync(maSP);
+            if (sp == null)
+            {
+                return NotFound(new { status = false, message = "Không tìm thấy sản phẩm" });
+            }
+
+            // Xóa các ảnh liên quan trên MinIO
+            if (!string.IsNullOrEmpty(sp.Anh1)) await minioService.DeleteFileAsync(sp.Anh1);
+            if (!string.IsNullOrEmpty(sp.Anh2)) await minioService.DeleteFileAsync(sp.Anh2);
+            if (!string.IsNullOrEmpty(sp.Anh3)) await minioService.DeleteFileAsync(sp.Anh3);
+            if (!string.IsNullOrEmpty(sp.Anh4)) await minioService.DeleteFileAsync(sp.Anh4);
+            if (!string.IsNullOrEmpty(sp.Anh5)) await minioService.DeleteFileAsync(sp.Anh5);
+            if (!string.IsNullOrEmpty(sp.Anh6)) await minioService.DeleteFileAsync(sp.Anh6);
+
+            // Xóa sản phẩm
+            _context.Sanphams.Remove(sp);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { status = true });
+        }
+
+
+
+        // PUT: api/Product/SuaSP
+        [HttpPut("SuaSP")]
+        public async Task<IActionResult> SuaSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] string DanhMuc, [FromForm] string Hang, [FromServices] MinioService minioService)
+        {
+            var sp = await _context.Sanphams.FindAsync(spmoi.MaSp);
+            if (sp == null)
+            {
+                return NotFound(new { status = false, message = "Không tìm thấy sản phẩm" });
+            }
+
+            sp.TenSp = spmoi.TenSp;
+            sp.MoTa = spmoi.MoTa;
+            sp.GiaTien = spmoi.GiaTien;
+            sp.SoLuongTrongKho = spmoi.SoLuongTrongKho;
+            sp.SoLuongDaBan = spmoi.SoLuongDaBan;
+
+            // Lưu ảnh mới lên MinIO và cập nhật URL
+            for (int i = 0; i < images.Length && i < 6; i++)
+            {
+                if (images[i] != null && images[i].Length > 0)
+                {
+                    // Xóa ảnh cũ trên MinIO nếu có
+                    switch (i)
+                    {
+                        case 0: if (!string.IsNullOrEmpty(sp.Anh1)) await minioService.DeleteFileAsync(sp.Anh1); break;
+                        case 1: if (!string.IsNullOrEmpty(sp.Anh2)) await minioService.DeleteFileAsync(sp.Anh2); break;
+                        case 2: if (!string.IsNullOrEmpty(sp.Anh3)) await minioService.DeleteFileAsync(sp.Anh3); break;
+                        case 3: if (!string.IsNullOrEmpty(sp.Anh4)) await minioService.DeleteFileAsync(sp.Anh4); break;
+                        case 4: if (!string.IsNullOrEmpty(sp.Anh5)) await minioService.DeleteFileAsync(sp.Anh5); break;
+                        case 5: if (!string.IsNullOrEmpty(sp.Anh6)) await minioService.DeleteFileAsync(sp.Anh6); break;
+                    }
+
+                    // Tải ảnh mới lên MinIO và nhận URL của ảnh
+                    string imageUrl = await minioService.UploadFileAsync(images[i]);
+
+                    // Cập nhật URL mới vào các trường ảnh tương ứng
+                    switch (i)
+                    {
+                        case 0: sp.Anh1 = imageUrl; break;
+                        case 1: sp.Anh2 = imageUrl; break;
+                        case 2: sp.Anh3 = imageUrl; break;
+                        case 3: sp.Anh4 = imageUrl; break;
+                        case 4: sp.Anh5 = imageUrl; break;
+                        case 5: sp.Anh6 = imageUrl; break;
+                    }
+                }
+            }
+
+            // Lưu danh mục và hãng
+            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.TenDanhMuc == DanhMuc);
+            if (dm != null) sp.MaDanhMuc = dm.MaDanhMuc;
+
+            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.TenHang == Hang);
+            if (hang != null) sp.MaHang = hang.MaHang;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { status = true });
+        }
+
         #region Quản lý hãng (Hangsanxuat)
 
         // GET: api/Admin/QuanLyHang
@@ -683,7 +812,7 @@ namespace ShopDoGiaDungAPI.Controllers
                                {
                                    MaSanPham = b.MaSp,
                                    TenSP = b.TenSp,
-                                   Image = b.Image1,
+                                   Anh = b.Anh1,
                                    GiaBan = b.GiaTien,
                                    SoLuong = a.SoLuongMua,
                                    ThanhTien = b.GiaTien * a.SoLuongMua
@@ -697,6 +826,59 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return Ok(result);
         }
+        //Hàm chuyển đổi dữ liệu từ dữ liệu tên ban đầu thành url
+        //[HttpPost("UpdateProductImagesToUrl")]
+        //public async Task<IActionResult> UpdateProductImagesToUrl()
+        //{
+        //    // Base URL cho MinIO
+        //    string baseUrl = "http://localhost:9001/shopdogiadung/";
+
+        //    // Lấy toàn bộ sản phẩm từ cơ sở dữ liệu
+        //    var products = await _context.Sanphams.ToListAsync();
+
+        //    foreach (var product in products)
+        //    {
+        //        // Nếu sản phẩm có các trường ảnh, cập nhật chúng thành URL đầy đủ
+        //        if (!string.IsNullOrEmpty(product.Anh1))
+        //        {
+        //            product.Anh1 = $"{baseUrl}{product.Anh1}";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(product.Anh2))
+        //        {
+        //            product.Anh2 = $"{baseUrl}{product.Anh2}";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(product.Anh3))
+        //        {
+        //            product.Anh3 = $"{baseUrl}{product.Anh3}";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(product.Anh4))
+        //        {
+        //            product.Anh4 = $"{baseUrl}{product.Anh4}";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(product.Anh5))
+        //        {
+        //            product.Anh5 = $"{baseUrl}{product.Anh5}";
+        //        }
+
+        //        if (!string.IsNullOrEmpty(product.Anh6))
+        //        {
+        //            product.Anh6 = $"{baseUrl}{product.Anh6}";
+        //        }
+
+        //        // Đánh dấu sản phẩm này cần được cập nhật trong cơ sở dữ liệu
+        //        _context.Sanphams.Update(product);
+        //    }
+
+        //    // Lưu thay đổi vào cơ sở dữ liệu
+        //    await _context.SaveChangesAsync();
+
+        //    return Ok(new { message = "Cập nhật URL thành công cho tất cả ảnh sản phẩm." });
+        //}
+
 
         #endregion
         #region Thống kê doanh số bán ra

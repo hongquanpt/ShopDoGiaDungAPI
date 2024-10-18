@@ -14,9 +14,9 @@ namespace ShopDoGiaDungAPI.Controllers
     {
         public const string SessionCart = "sessionCart";
         private readonly ILogger<CartControllerAPI> _logger;
-        private readonly OnlineShop2Context _context;
+        private readonly OnlineShopContext _context;
 
-        public CartControllerAPI(ILogger<CartControllerAPI> logger, OnlineShop2Context context)
+        public CartControllerAPI(ILogger<CartControllerAPI> logger, OnlineShopContext context)
         {
             _context = context;
             _logger = logger;

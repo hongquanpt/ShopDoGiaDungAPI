@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ShopDoGiaDungAPI.Data;
+using ShopDoGiaDungAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<OnlineShop2Context>(options =>
+builder.Services.AddDbContext<OnlineShopContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyDB"));
 });
@@ -20,6 +21,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true; // Ensures the session cookie is accessible only via HTTP requests
     options.Cookie.IsEssential = true; // Indicates the session cookie is required for the application
 });
+builder.Services.AddSingleton<MinioService>();
 builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 

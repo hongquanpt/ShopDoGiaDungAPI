@@ -11,10 +11,10 @@ namespace ShopDoGiaDungAPI.Controllers
     [ApiController]
     public class HomeControllerAPI : ControllerBase
     {
-        private readonly OnlineShop2Context _context;
+        private readonly OnlineShopContext _context;
         private readonly ILogger<HomeControllerAPI> _logger;
 
-        public HomeControllerAPI(ILogger<HomeControllerAPI> logger, OnlineShop2Context context)
+        public HomeControllerAPI(ILogger<HomeControllerAPI> logger, OnlineShopContext context)
         {
             _logger = logger;
             _context = context;

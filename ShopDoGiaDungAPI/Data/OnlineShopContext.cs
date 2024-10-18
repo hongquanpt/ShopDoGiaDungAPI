@@ -5,13 +5,13 @@ using ShopDoGiaDungAPI.Models;
 
 namespace ShopDoGiaDungAPI.Data;
 
-public partial class OnlineShop2Context : DbContext
+public partial class OnlineShopContext : DbContext
 {
-    public OnlineShop2Context()
+    public OnlineShopContext()
     {
     }
 
-    public OnlineShop2Context(DbContextOptions<OnlineShop2Context> options)
+    public OnlineShopContext(DbContextOptions<OnlineShopContext> options)
         : base(options)
     {
     }
@@ -45,7 +45,7 @@ public partial class OnlineShop2Context : DbContext
     public virtual DbSet<Vanchuyen> Vanchuyens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Data Source=QUAN\\QUAN;Initial Catalog=OnlineShop2;Integrated Security=True;Encrypt=false;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Data Source=QUAN\\QUAN;Initial Catalog=OnlineShop;Integrated Security=True;Encrypt=false;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -209,6 +209,12 @@ public partial class OnlineShop2Context : DbContext
             entity.ToTable("SANPHAM");
 
             entity.Property(e => e.MaSp).HasColumnName("MaSP");
+            entity.Property(e => e.Anh1).HasMaxLength(20);
+            entity.Property(e => e.Anh2).HasMaxLength(20);
+            entity.Property(e => e.Anh3).HasMaxLength(20);
+            entity.Property(e => e.Anh4).HasMaxLength(20);
+            entity.Property(e => e.Anh5).HasMaxLength(20);
+            entity.Property(e => e.Anh6).HasMaxLength(20);
             entity.Property(e => e.MoTa).HasMaxLength(1000);
             entity.Property(e => e.TenSp)
                 .HasMaxLength(100)

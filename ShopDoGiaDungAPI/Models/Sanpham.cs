@@ -11,6 +11,18 @@ public partial class Sanpham
 
     public string? MoTa { get; set; }
 
+    public string? Anh1 { get; set; }
+
+    public string? Anh2 { get; set; }
+
+    public string? Anh3 { get; set; }
+
+    public string? Anh4 { get; set; }
+
+    public string? Anh5 { get; set; }
+
+    public string? Anh6 { get; set; }
+
     public int? SoLuongDaBan { get; set; }
 
     public int? SoLuongTrongKho { get; set; }
@@ -20,18 +32,6 @@ public partial class Sanpham
     public int? MaHang { get; set; }
 
     public int? MaDanhMuc { get; set; }
-
-    public byte[]? Image1 { get; set; }
-
-    public byte[]? Image2 { get; set; }
-
-    public byte[]? Image3 { get; set; }
-
-    public byte[]? Image4 { get; set; }
-
-    public byte[]? Image5 { get; set; }
-
-    public byte[]? Image6 { get; set; }
 
     public virtual ICollection<Chitietdonhang> Chitietdonhangs { get; set; } = new List<Chitietdonhang>();
 

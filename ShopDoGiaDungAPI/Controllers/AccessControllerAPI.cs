@@ -14,9 +14,9 @@ namespace ShopDoGiaDungAPI.Controllers
     [ApiController]
     public class AccessControllerAPI : ControllerBase
     {
-        private readonly OnlineShop2Context _context;
+        private readonly OnlineShopContext _context;
 
-        public AccessControllerAPI(OnlineShop2Context context)
+        public AccessControllerAPI(OnlineShopContext context)
         {
             _context = context;
         }
