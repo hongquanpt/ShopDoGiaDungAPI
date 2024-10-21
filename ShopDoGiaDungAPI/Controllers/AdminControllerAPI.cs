@@ -308,7 +308,7 @@ namespace ShopDoGiaDungAPI.Controllers
         //}
         // GET: api/Product
         [HttpGet("QuanLySP")]
-        public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 5)
+        public async Task<IActionResult> QuanLySP([FromServices] MinioService minioService, int page = 1, int pageSize = 5)
         {
             // Lấy toàn bộ sản phẩm không áp dụng bộ lọc
             IQueryable<SanPhamct> query = from sp in _context.Sanphams
@@ -338,6 +338,17 @@ namespace ShopDoGiaDungAPI.Controllers
             var totalItemCount = await query.CountAsync();
             var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
+            // Tạo Pre-signed URL cho mỗi ảnh trước khi trả về
+            foreach (var sp in model)
+            {
+                sp.Anh1 = await minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh2 = await minioService.GetPreSignedUrlAsync(sp.Anh2);
+                sp.Anh3 = await minioService.GetPreSignedUrlAsync(sp.Anh3);
+                sp.Anh4 = await minioService.GetPreSignedUrlAsync(sp.Anh4);
+                sp.Anh5 = await minioService.GetPreSignedUrlAsync(sp.Anh5);
+                sp.Anh6 = await minioService.GetPreSignedUrlAsync(sp.Anh6);
+            }
+
             return Ok(new
             {
                 sanpham = model,
@@ -346,6 +357,7 @@ namespace ShopDoGiaDungAPI.Controllers
                 pageSize = pageSize
             });
         }
+
 
         // POST: api/Product/ThemSP
         [HttpPost("ThemSP")]
@@ -357,7 +369,15 @@ namespace ShopDoGiaDungAPI.Controllers
                 if (images[i] != null && images[i].Length > 0)
                 {
                     // Tải ảnh lên MinIO và nhận URL của ảnh
-                    string imageUrl = await minioService.UploadFileAsync(images[i]);
+                    string imageUrl;
+                    try
+                    {
+                        imageUrl = await minioService.UploadFileAsync(images[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        return BadRequest(new { status = false, message = $"Lỗi khi tải ảnh lên MinIO: {ex.Message}" });
+                    }
 
                     // Lưu URL vào các trường ảnh tương ứng
                     switch (i)
@@ -412,7 +432,6 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
 
-
         // PUT: api/Product/SuaSP
         [HttpPut("SuaSP")]
         public async Task<IActionResult> SuaSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] string DanhMuc, [FromForm] string Hang, [FromServices] MinioService minioService)
@@ -446,7 +465,15 @@ namespace ShopDoGiaDungAPI.Controllers
                     }
 
                     // Tải ảnh mới lên MinIO và nhận URL của ảnh
-                    string imageUrl = await minioService.UploadFileAsync(images[i]);
+                    string imageUrl;
+                    try
+                    {
+                        imageUrl = await minioService.UploadFileAsync(images[i]);
+                    }
+                    catch (Exception ex)
+                    {
+                        return BadRequest(new { status = false, message = $"Lỗi khi tải ảnh lên MinIO: {ex.Message}" });
+                    }
 
                     // Cập nhật URL mới vào các trường ảnh tương ứng
                     switch (i)

@@ -22,6 +22,11 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true; // Indicates the session cookie is required for the application
 });
 builder.Services.AddSingleton<MinioService>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
 builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
@@ -34,6 +39,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAllOrigins");
 
 app.UseAuthorization();
 
