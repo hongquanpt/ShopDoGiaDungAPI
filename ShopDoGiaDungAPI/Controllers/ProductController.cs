@@ -10,9 +10,9 @@ namespace ShopDoGiaDungAPI.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
-        private readonly MinioService _minioService;
+        private readonly IMinioService _minioService;
 
-        public ProductController(IProductService productService, MinioService minioService)
+        public ProductController(IProductService productService, IMinioService minioService)
         {
             _productService = productService;
             _minioService = minioService;

@@ -31,7 +31,7 @@ builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddSingleton<MinioService>();
+builder.Services.AddScoped<IMinioService, MinioService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",

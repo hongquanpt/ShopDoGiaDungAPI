@@ -1,14 +1,15 @@
 ﻿using Minio.DataModel.Args;
 using Minio;
+using ShopDoGiaDungAPI.Services.Interfaces;
 
-
-namespace ShopDoGiaDungAPI.Services
+namespace ShopDoGiaDungAPI.Services.Implementations
 {
-    public class MinioService
+    public class MinioService : IMinioService
     {
-        private readonly IMinioClient _minioClient;  // Thay đổi kiểu thành IMinioClient
+        private readonly IMinioClient _minioClient;
         private readonly string _bucketName;
         private readonly string _endpoint;
+
         public MinioService(IConfiguration configuration)
         {
             _endpoint = configuration["MinIO:Endpoint"];
@@ -16,9 +17,8 @@ namespace ShopDoGiaDungAPI.Services
             var secretKey = configuration["MinIO:SecretKey"];
             _bucketName = configuration["MinIO:BucketName"];
 
-            // Khởi tạo MinioClient với endpoint chính xác
             _minioClient = new MinioClient()
-                .WithEndpoint(_endpoint)  // Đảm bảo endpoint đúng định dạng
+                .WithEndpoint(_endpoint)
                 .WithCredentials(accessKey, secretKey)
                 .Build();
         }
@@ -54,6 +54,7 @@ namespace ShopDoGiaDungAPI.Services
 
             return presignedUrl;
         }
+
         public async Task<string> GetPreSignedUrlAsync(string fileName)
         {
             try

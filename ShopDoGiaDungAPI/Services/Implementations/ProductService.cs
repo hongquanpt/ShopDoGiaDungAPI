@@ -10,9 +10,9 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     public class ProductService : IProductService
     {
         private readonly OnlineShopContext _context;
-        private readonly MinioService _minioService;
+        private readonly IMinioService _minioService;
 
-        public ProductService(OnlineShopContext context, MinioService minioService)
+        public ProductService(OnlineShopContext context, IMinioService minioService)
         {
             _context = context;
             _minioService = minioService;
