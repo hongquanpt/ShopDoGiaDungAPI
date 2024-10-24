@@ -16,11 +16,13 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     {
         private readonly OnlineShopContext _context;
         private readonly PasswordHasher<Taikhoan> _passwordHasher;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(OnlineShopContext context)
+        public AuthService(OnlineShopContext context, IConfiguration configuration)
         {
             _context = context;
             _passwordHasher = new PasswordHasher<Taikhoan>();
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Login(LoginInfo loginInfo)
@@ -39,49 +41,70 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     return new BadRequestObjectResult(new { message = "Mật khẩu không chính xác" });
                 }
 
-                // Tạo danh sách các quyền cho người dùng
-                var roles = (from tk in _context.Taikhoans
-                             join cv in _context.ChucVus on tk.MaCv equals cv.MaCv
-                             join qcv in _context.CvQAs on cv.MaCv equals qcv.MaCv
-                             join q in _context.Quyens on qcv.MaQ equals q.MaQ
-                             join a in _context.ActionTs on qcv.MaA equals a.MaA
-                             where tk.Email == loginInfo.Email
-                             select new AccountRole
-                             {
-                                 MaTaiKhoan = tk.MaTaiKhoan,
-                                 MaQ = q.MaQ,
-                                 MaCv = cv.MaCv,
-                                 TenCV = cv.Ten,
-                                 TenQ = q.Ten,
-                                 ControllerName = q.ControllerName,
-                                 ActionName = q.ActionName,
-                                 MaA = a.MaA,
-                                 TenA = a.TenA,
-                             }).ToList();
+                // Lấy vai trò của người dùng
+                var role = await _context.ChucVus.FirstOrDefaultAsync(c => c.MaCv == user.MaCv);
+                var roleName = role?.Ten ?? "User"; // Nếu không tìm thấy, mặc định là "User"
 
-                // Tạo JWT token
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.UTF8.GetBytes("your_secret_key"); // Thay "your_secret_key" bằng khóa bí mật của bạn
+                // Tạo claims cho JWT
+                var claims = new List<Claim>
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.MaTaiKhoan.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, roleName) // Thêm vai trò vào claims
+                };
+
+                // Lấy các quyền của vai trò
+                var permissions = from qcv in _context.CvQAs
+                                  join q in _context.Quyens on qcv.MaQ equals q.MaQ
+                                  join a in _context.ActionTs on qcv.MaA equals a.MaA
+                                  where qcv.MaCv == user.MaCv
+                                  select new
+                                  {
+                                      q.Ten,
+                                      q.ControllerName,
+                                      q.ActionName
+                                  };
+
+                foreach (var perm in permissions)
+                {
+                    claims.Add(new Claim("Permission", $"{perm.ControllerName}:{perm.ActionName}"));
+                }
+
+                var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = new ClaimsIdentity(new Claim[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, user.MaTaiKhoan.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        // Bạn có thể thêm các claim khác nếu cần
-                    }),
-                    Expires = DateTime.UtcNow.AddHours(1),
-                    Issuer = "your_issuer", // Thay "your_issuer" bằng giá trị phù hợp
-                    Audience = "your_audience", // Thay "your_audience" bằng giá trị phù hợp
+                    Subject = new ClaimsIdentity(claims),
+                    Expires = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:ExpiryMinutes"])),
+                    Issuer = _configuration["Jwt:Issuer"],
+                    Audience = _configuration["Jwt:Audience"],
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
                 };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var tokenString = tokenHandler.WriteToken(token);
 
-                return new OkObjectResult(new { message = "Đăng nhập thành công", token = tokenString, roles });
+                return new OkObjectResult(new
+                {
+                    message = "Đăng nhập thành công",
+                    token = tokenString,
+                    user = new
+                    {
+                        user.MaTaiKhoan,
+                        user.Ten,
+                        user.Email,
+                        user.DiaChi,
+                        user.Sdt,
+                        user.NgaySinh,
+                        roleName
+                    }
+                });
             }
             catch (Exception ex)
             {
+                // Log lỗi nếu cần
                 return new StatusCodeResult(500);
             }
         }
@@ -90,50 +113,34 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         {
             try
             {
-                var user = await _context.Taikhoans.SingleOrDefaultAsync(c => c.Email == registerInfo.Email);
-                if (user != null)
+                var existingUser = await _context.Taikhoans.SingleOrDefaultAsync(c => c.Email == registerInfo.Email);
+                if (existingUser != null)
                 {
                     return new BadRequestObjectResult(new { message = "Tài khoản đã tồn tại" });
                 }
 
-                Taikhoan newTk = new Taikhoan
+                Taikhoan newUser = new Taikhoan
                 {
                     Ten = registerInfo.Ten,
                     Email = registerInfo.Email,
                     DiaChi = registerInfo.DiaChi,
                     Sdt = registerInfo.Sdt,
                     NgaySinh = registerInfo.NgaySinh.HasValue ? DateOnly.FromDateTime(registerInfo.NgaySinh.Value) : (DateOnly?)null,
-                    MaCv = 3
+                    MaCv = 3 // Mã chức vụ mặc định, có thể thay đổi tùy theo yêu cầu
                 };
 
-                newTk.MatKhau = _passwordHasher.HashPassword(newTk, registerInfo.Password);
+                newUser.MatKhau = _passwordHasher.HashPassword(newUser, registerInfo.Password);
 
-                _context.Taikhoans.Add(newTk);
+                _context.Taikhoans.Add(newUser);
                 await _context.SaveChangesAsync();
 
-                var roles = (from tk in _context.Taikhoans
-                             join cv in _context.ChucVus on tk.MaCv equals cv.MaCv
-                             join qcv in _context.CvQAs on cv.MaCv equals qcv.MaCv
-                             join q in _context.Quyens on qcv.MaQ equals q.MaQ
-                             join a in _context.ActionTs on qcv.MaA equals a.MaA
-                             where tk.Email == registerInfo.Email
-                             select new AccountRole
-                             {
-                                 MaTaiKhoan = tk.MaTaiKhoan,
-                                 MaQ = q.MaQ,
-                                 MaCv = cv.MaCv,
-                                 TenCV = cv.Ten,
-                                 TenQ = q.Ten,
-                                 ControllerName = q.ControllerName,
-                                 ActionName = q.ActionName,
-                                 MaA = a.MaA,
-                                 TenA = a.TenA,
-                             }).ToList();
+                // Gán quyền hạn mặc định cho người dùng mới nếu cần
 
-                return new OkObjectResult(new { message = "Đăng ký thành công", roles });
+                return new OkObjectResult(new { message = "Đăng ký thành công" });
             }
             catch (Exception ex)
             {
+                // Log lỗi nếu cần
                 return new StatusCodeResult(500);
             }
         }

@@ -1,8 +1,11 @@
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +40,38 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAllOrigins",
         builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
+// Lấy cấu hình JWT từ appsettings.json hoặc Environment Variables
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+// Cấu hình Authentication với JWT
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ClockSkew = TimeSpan.Zero // Giảm thiểu thời gian lệch chu kỳ (default là 5 phút)
+    };
+});
+
+// Cấu hình Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy =>
+        policy.RequireRole("Admin")); // Chỉ cho Admin truy cập
+    // Thêm các policy khác nếu cần
+});
 builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
@@ -68,6 +103,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAllOrigins");
+
+app.UseAuthentication(); // Thêm Authentication Middleware
+
+app.UseAuthorization();  // Thêm Authorization Middleware
 
 app.UseAuthorization();
 
