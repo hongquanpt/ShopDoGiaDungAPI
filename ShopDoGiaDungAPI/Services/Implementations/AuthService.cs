@@ -41,9 +41,17 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     return new BadRequestObjectResult(new { message = "Mật khẩu không chính xác" });
                 }
 
-                // Lấy vai trò của người dùng
-                var role = await _context.ChucVus.FirstOrDefaultAsync(c => c.MaCv == user.MaCv);
-                var roleName = role?.Ten ?? "User"; // Nếu không tìm thấy, mặc định là "User"
+                // Lấy danh sách vai trò của người dùng
+                var roles = await (from ur in _context.UserRoles
+                                   join r in _context.Roles on ur.RoleId equals r.RoleId
+                                   where ur.UserId == user.MaTaiKhoan
+                                   select r.RoleName).ToListAsync();
+
+                // Nếu người dùng không có vai trò nào, gán vai trò mặc định là "User"
+                if (!roles.Any())
+                {
+                    roles.Add("User");
+                }
 
                 // Tạo claims cho JWT
                 var claims = new List<Claim>
@@ -51,25 +59,13 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     new Claim(ClaimTypes.NameIdentifier, user.MaTaiKhoan.ToString()),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, roleName) // Thêm vai trò vào claims
+                    new Claim(ClaimTypes.Email, user.Email)
                 };
 
-                // Lấy các quyền của vai trò
-                var permissions = from qcv in _context.CvQAs
-                                  join q in _context.Quyens on qcv.MaQ equals q.MaQ
-                                  join a in _context.ActionTs on qcv.MaA equals a.MaA
-                                  where qcv.MaCv == user.MaCv
-                                  select new
-                                  {
-                                      q.Ten,
-                                      q.ControllerName,
-                                      q.ActionName
-                                  };
-
-                foreach (var perm in permissions)
+                // Thêm tất cả các vai trò vào claims
+                foreach (var roleName in roles)
                 {
-                    claims.Add(new Claim("Permission", $"{perm.ControllerName}:{perm.ActionName}"));
+                    claims.Add(new Claim(ClaimTypes.Role, roleName));
                 }
 
                 var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
@@ -98,7 +94,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                         user.DiaChi,
                         user.Sdt,
                         user.NgaySinh,
-                        roleName
+                        roles
                     }
                 });
             }
@@ -125,8 +121,8 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     Email = registerInfo.Email,
                     DiaChi = registerInfo.DiaChi,
                     Sdt = registerInfo.Sdt,
-                    NgaySinh = registerInfo.NgaySinh.HasValue ? DateOnly.FromDateTime(registerInfo.NgaySinh.Value) : (DateOnly?)null,
-                    MaCv = 3 // Mã chức vụ mặc định, có thể thay đổi tùy theo yêu cầu
+                    NgaySinh = registerInfo.NgaySinh.HasValue ? DateOnly.FromDateTime(registerInfo.NgaySinh.Value) : (DateOnly?)null
+                    // Không cần MaCv nữa
                 };
 
                 newUser.MatKhau = _passwordHasher.HashPassword(newUser, registerInfo.Password);
@@ -134,7 +130,18 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 _context.Taikhoans.Add(newUser);
                 await _context.SaveChangesAsync();
 
-                // Gán quyền hạn mặc định cho người dùng mới nếu cần
+                // Gán vai trò mặc định cho người dùng mới
+                var defaultRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "user");
+                if (defaultRole != null)
+                {
+                    UserRole userRole = new UserRole
+                    {
+                        UserId = newUser.MaTaiKhoan,
+                        RoleId = defaultRole.RoleId
+                    };
+                    _context.UserRoles.Add(userRole);
+                    await _context.SaveChangesAsync();
+                }
 
                 return new OkObjectResult(new { message = "Đăng ký thành công" });
             }
@@ -143,6 +150,28 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 // Log lỗi nếu cần
                 return new StatusCodeResult(500);
             }
+        }
+
+        public UserDto GetUserById(string userId)
+        {
+            int id = int.Parse(userId);
+            // Tìm người dùng trong cơ sở dữ liệu bằng userId
+            var user = _context.Taikhoans
+                .Where(u => u.MaTaiKhoan == id)
+                .Select(u => new UserDto
+                {
+                    Id = u.MaTaiKhoan.ToString(),
+                    FullName = u.Ten,
+                    Email = u.Email,
+                    Roles = (from ur in _context.UserRoles
+                             join r in _context.Roles on ur.RoleId equals r.RoleId
+                             where ur.UserId == u.MaTaiKhoan
+                             select r.RoleName).ToList()
+                    // Thêm các thuộc tính cần thiết khác
+                })
+                .FirstOrDefault();
+
+            return user;
         }
     }
 }

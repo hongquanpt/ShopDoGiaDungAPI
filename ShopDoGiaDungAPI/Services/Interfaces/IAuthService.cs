@@ -7,5 +7,6 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
     {
         Task<IActionResult> Login(LoginInfo loginInfo);
         Task<IActionResult> Register(RegisterInfo registerInfo);
+        UserDto GetUserById(string userId);
     }
 }

@@ -11,153 +11,162 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     public class CartService : ICartService
     {
         private readonly OnlineShopContext _context;
+        private const string SessionCart = "sessionCart";
 
         public CartService(OnlineShopContext context)
         {
             _context = context;
         }
 
-        private const string SessionCart = "sessionCart";
-
+        // Phương thức lấy giỏ hàng
         public IActionResult GetCart(ISession session)
         {
             var cart = session.Get(SessionCart);
-            var list = new List<CartModel>();
-            var tongtien = 0;
-
-            if (cart != null)
+            if (cart == null)
             {
-                var json = Encoding.UTF8.GetString(cart);
-                list = JsonSerializer.Deserialize<List<CartModel>>(json);
-                tongtien = list.Sum(item => item.soluong * Convert.ToInt32(item.sanpham.GiaTien));
+                return new OkObjectResult(new { cart = new List<CartModel>(), tongtien = 0, countCart = 0 });
             }
+
+            var list = JsonSerializer.Deserialize<List<CartModel>>(Encoding.UTF8.GetString(cart)) ?? new List<CartModel>();
+            int tongtien = list.Sum(item => item.soluong * Convert.ToInt32(item.sanpham.GiaTien));
+            int countCart = list.Sum(item => item.soluong);
+
+            session.SetInt32("countCart", countCart);
 
             return new OkObjectResult(new
             {
                 cart = list,
-                tongtien = tongtien
+                tongtien = tongtien,
+                countCart = countCart
             });
         }
 
-        public JsonResult AddItemToCart(int productId, ISession session)
+        // Phương thức thêm sản phẩm vào giỏ hàng
+        public JsonResult AddItemToCart(int productId, ISession session, bool checkOnly = false)
         {
+            // Lấy thông tin sản phẩm từ cơ sở dữ liệu
             var product = _context.Sanphams.FirstOrDefault(c => c.MaSp == productId);
-            var cart = session.Get(SessionCart);
-            var countCart = session.GetInt32("countCart");
-            int count = 0;
 
-            if (product.SoLuongTrongKho > 0)
+            // Kiểm tra nếu sản phẩm không tồn tại hoặc đã hết hàng
+            if (product == null || product.SoLuongTrongKho <= 0)
             {
-                List<CartModel> list;
-                if (cart != null)
+                return new JsonResult(new { status = false, message = "Product is out of stock" });
+            }
+
+            // Lấy session giỏ hàng hiện tại
+            var cart = session.Get(SessionCart);
+            List<CartModel> list = cart != null
+                ? JsonSerializer.Deserialize<List<CartModel>>(Encoding.UTF8.GetString(cart))
+                : new List<CartModel>();
+
+            // Tìm sản phẩm trong giỏ hàng
+            var existingItem = list.FirstOrDefault(x => x.sanpham.MaSp == productId);
+
+            // Kiểm tra số lượng tồn kho
+            if (existingItem != null)
+            {
+                // Nếu sản phẩm đã có trong giỏ, kiểm tra nếu số lượng cộng thêm sẽ vượt quá tồn kho
+                if (existingItem.soluong + 1 > product.SoLuongTrongKho)
                 {
-                    var json = Encoding.UTF8.GetString(cart);
-                    list = JsonSerializer.Deserialize<List<CartModel>>(json);
-                    var existingItem = list.FirstOrDefault(x => x.sanpham.MaSp == productId);
-                    if (existingItem != null)
-                    {
-                        existingItem.soluong += 1;
-                    }
-                    else
-                    {
-                        list.Add(new CartModel { sanpham = product, soluong = 1 });
-                    }
-                }
-                else
-                {
-                    list = new List<CartModel> { new CartModel { sanpham = product, soluong = 1 } };
+                    return new JsonResult(new { status = false, message = "Cannot add more items. Not enough stock." });
                 }
 
-                var jsonSetSession = JsonSerializer.Serialize(list);
-                var byteArrayCart = Encoding.UTF8.GetBytes(jsonSetSession);
-                session.Set(SessionCart, byteArrayCart);
-                count = list.Count;
+                // Nếu chỉ kiểm tra, trả về kết quả mà không cập nhật giỏ hàng
+                if (checkOnly)
+                {
+                    return new JsonResult(new { status = true, message = "Item is available" });
+                }
 
-                session.SetInt32("countCart", count);
-                return new JsonResult(new { countCart = count, status = true });
+                // Nếu đủ tồn kho và không chỉ kiểm tra, tăng số lượng sản phẩm trong giỏ hàng
+                existingItem.soluong += 1;
             }
             else
             {
-                return new JsonResult(new { status = false });
+                // Nếu sản phẩm chưa có trong giỏ hàng và tồn kho có ít nhất 1 sản phẩm
+                if (product.SoLuongTrongKho < 1)
+                {
+                    return new JsonResult(new { status = false, message = "Product is out of stock" });
+                }
+
+                // Nếu chỉ kiểm tra, trả về kết quả mà không cập nhật giỏ hàng
+                if (checkOnly)
+                {
+                    return new JsonResult(new { status = true, message = "Item is available" });
+                }
+
+                // Thêm sản phẩm mới vào giỏ hàng
+                list.Add(new CartModel { sanpham = product, soluong = 1 });
             }
+
+            // Cập nhật lại giỏ hàng trong session
+            session.Set(SessionCart, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(list)));
+            session.SetInt32("countCart", list.Sum(item => item.soluong));
+
+            return new JsonResult(new { countCart = list.Sum(item => item.soluong), status = true });
         }
 
+
+
+        // Phương thức lấy tổng tiền giỏ hàng
         public ActionResult GetCartTotal(ISession session)
         {
             var cart = session.Get(SessionCart);
-            var json = Encoding.UTF8.GetString(cart);
-            var list = JsonSerializer.Deserialize<List<CartModel>>(json);
+            if (cart == null)
+            {
+                return new OkObjectResult(new { tong = 0 });
+            }
+
+            // Deserialize giỏ hàng từ session
+            var list = JsonSerializer.Deserialize<List<CartModel>>(Encoding.UTF8.GetString(cart));
             int total = list.Sum(item => item.soluong * Convert.ToInt32(item.sanpham.GiaTien));
 
             return new OkObjectResult(new { tong = total });
         }
 
+
+        // Phương thức xóa sản phẩm khỏi giỏ hàng
         public JsonResult DeleteItemFromCart(long productId, ISession session)
         {
             var cart = session.Get(SessionCart);
-            var json = Encoding.UTF8.GetString(cart);
-            var list = JsonSerializer.Deserialize<List<CartModel>>(json);
+            if (cart == null) return new JsonResult(new { status = false });
+
+            var list = JsonSerializer.Deserialize<List<CartModel>>(Encoding.UTF8.GetString(cart));
             list.RemoveAll(x => x.sanpham.MaSp == productId);
 
-            var jsonSetSession = JsonSerializer.Serialize(list);
-            var byteArrayCart = Encoding.UTF8.GetBytes(jsonSetSession);
-            session.Set(SessionCart, byteArrayCart);
-            var countCart = session.GetInt32("countCart");
-            session.SetInt32("countCart", countCart.HasValue ? countCart.Value - 1 : 0);
+            session.Set(SessionCart, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(list)));
+            int countCart = list.Sum(item => item.soluong);
+            session.SetInt32("countCart", countCart);
 
+            return new JsonResult(new { status = true, countCart });
+        }
+
+        // Phương thức cập nhật số lượng sản phẩm trong giỏ hàng
+        public JsonResult UpdateCartItemQuantity(int productId, int quantity)
+        {
+            // Lấy thông tin sản phẩm từ cơ sở dữ liệu
+            var product = _context.Sanphams.FirstOrDefault(c => c.MaSp == productId);
+
+            // Kiểm tra nếu sản phẩm không tồn tại hoặc đã hết hàng
+            if (product == null)
+            {
+                return new JsonResult(new { status = false, message = "Product does not exist." });
+            }
+
+            if (quantity <= 0)
+            {
+                return new JsonResult(new { status = false, message = "Quantity must be greater than zero." });
+            }
+
+            // Kiểm tra nếu số lượng yêu cầu vượt quá tồn kho
+            if (product.SoLuongTrongKho < quantity)
+            {
+                return new JsonResult(new { status = false, message = "Requested quantity exceeds available stock." });
+            }
+
+            // Nếu kiểm tra tồn kho thành công
             return new JsonResult(new { status = true });
         }
-
-        public JsonResult UpdateCartItem(int productId, int amount, ISession session)
-        {
-            var product = _context.Sanphams.FirstOrDefault(c => c.MaSp == productId);
-            var cart = session.Get(SessionCart);
-            var json = Encoding.UTF8.GetString(cart);
-            var list = JsonSerializer.Deserialize<List<CartModel>>(json);
-
-            float price = 0;
-            float tongtien = 0;
-            string kiemtrahethang = "";
-
-            if (amount > product.SoLuongTrongKho)
-            {
-                kiemtrahethang = "hethang";
-            }
-
-            if (amount <= 0)
-            {
-                list.RemoveAll(x => x.sanpham.MaSp == productId);
-                var countCart = session.GetInt32("countCart");
-                session.SetInt32("countCart", countCart.HasValue ? countCart.Value - 1 : 0);
-            }
-            else
-            {
-                foreach (var item in list)
-                {
-                    if (item.sanpham.MaSp == productId)
-                    {
-                        item.soluong = amount;
-                        price = amount * Convert.ToInt32(item.sanpham.GiaTien);
-                    }
-                    tongtien += item.soluong * Convert.ToInt32(item.sanpham.GiaTien);
-                }
-            }
-
-            var jsonSetSession = JsonSerializer.Serialize(list);
-            var byteArrayCart = Encoding.UTF8.GetBytes(jsonSetSession);
-            session.Set(SessionCart, byteArrayCart);
-
-            return new JsonResult(new
-            {
-                status = true,
-                productId = productId,
-                price = price,
-                tongtien = tongtien,
-                countCart = list.Count,
-                kiemtrahethang = kiemtrahethang
-            });
-        }
-
+        // Phương thức xóa toàn bộ giỏ hàng
         public JsonResult ClearCart(ISession session)
         {
             session.Remove(SessionCart);
@@ -165,78 +174,81 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             return new JsonResult(new { status = true });
         }
 
-        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, ISession session, int userId)
+        // Phương thức thanh toán
+        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? userId = null)
         {
             try
             {
-                if (string.IsNullOrEmpty(thanhToan.ten))
+                // Kiểm tra thông tin thanh toán đầy đủ
+                if (string.IsNullOrEmpty(thanhToan.ten) || string.IsNullOrEmpty(thanhToan.sdt) || string.IsNullOrEmpty(thanhToan.diaChi))
                 {
-                    return new JsonResult(new { status = false, message = "Họ tên người nhận không được bỏ trống" });
-                }
-                if (string.IsNullOrEmpty(thanhToan.SDT))
-                {
-                    return new JsonResult(new { status = false, message = "Số điện thoại không được bỏ trống" });
-                }
-                if (string.IsNullOrEmpty(thanhToan.DiaChi))
-                {
-                    return new JsonResult(new { status = false, message = "Địa chỉ không được bỏ trống" });
+                    return new JsonResult(new { status = false, message = "Thông tin thanh toán không đầy đủ" });
                 }
 
+                // Kiểm tra giỏ hàng từ dữ liệu thanh toán
+                if (thanhToan.cartItems == null || !thanhToan.cartItems.Any())
+                {
+                    return new JsonResult(new { status = false, message = "Giỏ hàng trống" });
+                }
+
+                // Tính tổng tiền
+                long total = thanhToan.cartItems.Sum(item => item.quantity * Convert.ToInt32(item.cartItems.giaTien));
+
+                // Tạo đơn hàng mới
                 var order = new Donhang
                 {
-                    MaTaiKhoan = userId,
+                    MaTaiKhoan = userId, // userId có thể null cho khách vãng lai
                     NgayLap = DateOnly.FromDateTime(DateTime.Now),
-                    TongTien = 0,
-                    TinhTrang = 1
+                    TongTien = total,
+                    TinhTrang = 1 // Giả sử trạng thái 1 là "Đang xử lý"
                 };
-
-                var cart = session.Get(SessionCart);
-                var json = Encoding.UTF8.GetString(cart);
-                var list = JsonSerializer.Deserialize<List<CartModel>>(json);
-                long total = list.Sum(item => item.soluong * Convert.ToInt32(item.sanpham.GiaTien));
-                order.TongTien = total;
-
+        
                 _context.Donhangs.Add(order);
                 await _context.SaveChangesAsync();
-
                 var id = order.MaDonHang;
-                var vc = new Vanchuyen
-                {
-                    MaDonHang = id,
-                    NguoiNhan = thanhToan.ten,
-                    DiaChi = thanhToan.DiaChi,
-                    Sdt = thanhToan.SDT,
-                    HinhThucVanChuyen = "Giao tận nhà"
-                };
-
+                var vc = new Vanchuyen();
+                vc.MaDonHang =id;
+                vc.NguoiNhan = thanhToan.ten;
+                vc.DiaChi = thanhToan.diaChi;
+                vc.Sdt = thanhToan.sdt;
+                vc.HinhThucVanChuyen = "Giao tận nhà";
                 _context.Vanchuyens.Add(vc);
-
-                foreach (var item in list)
-                {
-                    var it = _context.Sanphams.Find(item.sanpham.MaSp);
-                    var orderDetail = new Chitietdonhang
-                    {
-                        MaDonHang = id,
-                        MaSp = item.sanpham.MaSp,
-                        SoLuongMua = item.soluong
-                    };
-                    it.SoLuongDaBan += item.soluong;
-                    it.SoLuongTrongKho -= item.soluong;
-
-                    _context.Chitietdonhangs.Add(orderDetail);
-                }
-
                 await _context.SaveChangesAsync();
-                session.Remove(SessionCart);
-                session.Remove("countCart");
 
-                return new JsonResult(new { status = true });
-            }
-            catch (Exception ex)
+                // Thêm chi tiết đơn hàng và cập nhật số lượng trong kho
+                foreach (var item in thanhToan.cartItems)
+        {
+            var product = _context.Sanphams.Find(item.cartItems.maSp);
+            if (product != null && product.SoLuongTrongKho >= item.quantity)
             {
-                // Log lỗi nếu cần
-                return new JsonResult(new { status = false });
+                // Tạo chi tiết đơn hàng
+                var orderDetail = new Chitietdonhang
+                {
+                    MaDonHang = order.MaDonHang,
+                    MaSp = item.cartItems.maSp,
+                    SoLuongMua = item.quantity
+                };
+                product.SoLuongDaBan += item.quantity;
+                product.SoLuongTrongKho -= item.quantity;
+
+                _context.Chitietdonhangs.Add(orderDetail);
+            }
+            else
+            {
+                return new JsonResult(new { status = false, message = $"Sản phẩm {item.cartItems.maSp} không đủ số lượng trong kho" });
             }
         }
+
+        await _context.SaveChangesAsync();
+
+        // Trả về kết quả thành công
+        return new JsonResult(new { status = true });
+    }
+    catch (Exception)
+    {
+        return new JsonResult(new { status = false, message = "Lỗi khi xử lý thanh toán" });
+    }
+}
+
     }
 }

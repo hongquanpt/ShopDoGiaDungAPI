@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class OrderController : ControllerBase
@@ -15,7 +17,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpGet("orders")]
-        public IActionResult QuanLyDH(int? tinhTrang = null, int page = 1, int pageSize = 5)
+        public IActionResult QuanLyDH(int? tinhTrang = null, int page = 1, int pageSize = 100)
         {
             return _orderService.GetOrders(tinhTrang, page, pageSize);
         }
@@ -38,10 +40,29 @@ namespace ShopDoGiaDungAPI.Controllers
             return _orderService.CancelOrder(madh);
         }
 
-        [HttpGet("orders/{id}/details")]
-        public IActionResult MyOrderDetail(int id)
+        [HttpGet("orders/{orderId}/details")]
+        public async Task<IActionResult> GetOrderDetails(int orderId)
         {
-            return _orderService.GetOrderDetails(id);
+            var orderDetails = await _orderService.GetOrderDetails(orderId);
+
+            if (orderDetails == null || orderDetails.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return Ok(orderDetails);
+        }
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetPendingOrders()
+        {
+            var orders = await _orderService.GetPendingOrdersAsync();
+
+            if (orders == null || orders.Count == 0)
+            {
+                return NotFound(new { message = "No pending orders found." });
+            }
+
+            return Ok(orders);
         }
     }
 }

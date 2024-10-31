@@ -10,12 +10,21 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     public class OrderService : IOrderService
     {
         private readonly OnlineShopContext _context;
+        private readonly IMinioService _minioService;
 
-        public OrderService(OnlineShopContext context)
+        public OrderService(OnlineShopContext context, IMinioService minioService)
         {
             _context = context;
+            _minioService = minioService;
         }
 
+        public async Task<List<Donhang>> GetPendingOrdersAsync()
+        {
+            var orders = await _context.Donhangs
+                .Where(order => order.TinhTrang == 1)
+                .ToListAsync();
+            return orders;
+        }
         // Admin functions
         public IActionResult GetOrders(int? status, int page, int pageSize)
         {
@@ -98,7 +107,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             }
         }
 
-        public IActionResult GetOrderDetails(int orderId)
+        public async Task<List<MyOrderDetail>> GetOrderDetails(int orderId)
         {
             var orderDetails = from a in _context.Chitietdonhangs
                                join b in _context.Sanphams on a.MaSp equals b.MaSp
@@ -113,14 +122,15 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                                    ThanhTien = b.GiaTien * a.SoLuongMua
                                };
 
-            var result = orderDetails.ToList();
-            if (result.Count == 0)
+            var orderDetailsList = orderDetails.ToList();
+            foreach (var sp in orderDetailsList)
             {
-                return new NotFoundResult();
+                sp.Anh = await _minioService.GetPreSignedUrlAsync(sp.Anh);
             }
 
-            return new OkObjectResult(result);
+            return orderDetailsList;
         }
+
 
         // Home functions
         public async Task<IActionResult> GetUserOrders(int userId, string typeMenu, int pageIndex, int pageSize)

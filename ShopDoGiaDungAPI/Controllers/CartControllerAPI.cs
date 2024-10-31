@@ -1,10 +1,12 @@
 ﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class CartControllerAPI : ControllerBase
@@ -22,11 +24,12 @@ namespace ShopDoGiaDungAPI.Controllers
             return _cartService.GetCart(HttpContext.Session);
         }
 
-        [HttpPost("AddItem")]
-        public JsonResult AddItem(int productId)
+        [HttpPost("AddItem/{productId}")]
+        public JsonResult AddItem(int productId, bool checkOnly = false)
         {
-            return _cartService.AddItemToCart(productId, HttpContext.Session);
+            return _cartService.AddItemToCart(productId, HttpContext.Session, checkOnly);
         }
+
 
         [HttpGet("Total")]
         public ActionResult Total()
@@ -43,7 +46,7 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpPut("Update")]
         public JsonResult Update(int productId, int amount)
         {
-            return _cartService.UpdateCartItem(productId, amount, HttpContext.Session);
+            return _cartService.UpdateCartItemQuantity(productId, amount);
         }
 
         [HttpDelete("DeleteAll")]
@@ -55,13 +58,10 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpPost("ThanhToan")]
         public async Task<JsonResult> ThanhToan([FromBody] ThongTinThanhToan thanhToan)
         {
-            var userId = HttpContext.Session.GetInt32("Ma");
-            if (userId == null)
-            {
-                return new JsonResult(new { status = false, message = "Người dùng chưa đăng nhập" });
-            }
+            int ? userId = HttpContext.Session.GetInt32("Ma");
+           
 
-            return await _cartService.Checkout(thanhToan, HttpContext.Session, userId.Value);
+            return await _cartService.Checkout(thanhToan, userId);
         }
     }
 }

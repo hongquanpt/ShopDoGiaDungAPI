@@ -6,7 +6,7 @@
 
         public string? Ten { get; set; }
 
-        public DateTime? NgaySinh { get; set; }
+        public DateOnly? NgaySinh { get; set; }
 
         public string? Sdt { get; set; }
 

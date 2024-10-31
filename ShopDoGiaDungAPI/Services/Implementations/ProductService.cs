@@ -301,14 +301,19 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             int? sum = danhgia.Sum(item => item.DanhGia);
             double sao = danhgia.Count() > 0 ? Math.Round((double)sum / danhgia.Count(), 1) : 0;
 
-            var sanpham = await _context.Sanphams.FindAsync(productId);
+            var sp = await _context.Sanphams.FindAsync(productId);
 
             // Tạo Pre-signed URL cho ảnh sản phẩm
-            sanpham.Anh1 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh1);
+            sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+            sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2);
+            sp.Anh3 = await _minioService.GetPreSignedUrlAsync(sp.Anh3);
+            sp.Anh4 = await _minioService.GetPreSignedUrlAsync(sp.Anh4);
+            sp.Anh5 = await _minioService.GetPreSignedUrlAsync(sp.Anh5);
+            sp.Anh6 = await _minioService.GetPreSignedUrlAsync(sp.Anh6);
 
             return new OkObjectResult(new
             {
-                sanpham = sanpham,
+                sanpham = sp,
                 danhgia = danhgia,
                 sao = sao
             });
@@ -318,6 +323,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         {
             IQueryable<Sanpham> model = _context.Sanphams;
 
+           
             if (maxPrice != 0)
             {
                 model = model.Where(item => item.GiaTien < maxPrice && item.GiaTien > minPrice);
@@ -344,10 +350,16 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             });
         }
 
-        public async Task<IActionResult> SearchProducts(string search, int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice)
+        public async Task<IActionResult> SearchProducts(string? search, int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice)
         {
-            IQueryable<Sanpham> model = _context.Sanphams.Where(s => s.TenSp.Contains(search));
+            // Khởi tạo query sản phẩm
+            IQueryable<Sanpham> model = _context.Sanphams;
 
+            // Kiểm tra và áp dụng điều kiện tìm kiếm tên sản phẩm nếu có
+            if (!string.IsNullOrEmpty(search))
+            {
+                model = model.Where(s => s.TenSp.Contains(search));
+            }
             if (maxPrice != 0)
             {
                 model = model.Where(item => item.GiaTien < maxPrice && item.GiaTien > minPrice);
@@ -367,12 +379,12 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             return new OkObjectResult(new
             {
                 sanpham = dt,
-                search = search,
                 maxPrice = maxPrice,
                 minPrice = minPrice,
                 orderPrice = orderPrice,
                 totalCount = count
             });
         }
+
     }
 }

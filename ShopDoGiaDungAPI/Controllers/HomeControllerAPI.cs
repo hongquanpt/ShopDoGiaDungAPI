@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class HomeControllerAPI : ControllerBase
@@ -50,7 +52,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpGet("Search")]
-        public async Task<IActionResult> Search(string search, int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
+        public async Task<IActionResult> Search(string? search, int PageIndex = 1, int PageSize = 100, int maxPrice =100000000, int minPrice = 0, string orderPrice = "tang")
         {
             return await _productService.SearchProducts(search, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
         }

@@ -38,13 +38,18 @@ public partial class OnlineShopContext : DbContext
 
     public virtual DbSet<Quyen> Quyens { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
     public virtual DbSet<Sanpham> Sanphams { get; set; }
 
     public virtual DbSet<Taikhoan> Taikhoans { get; set; }
 
+    public virtual DbSet<UserRole> UserRoles { get; set; }
+
     public virtual DbSet<Vanchuyen> Vanchuyens { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Data Source=QUAN\\QUAN;Initial Catalog=OnlineShop;Integrated Security=True;Encrypt=false;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -202,6 +207,15 @@ public partial class OnlineShopContext : DbContext
             entity.Property(e => e.Ten).HasMaxLength(200);
         });
 
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AE26BA8FE");
+
+            entity.HasIndex(e => e.RoleName, "UQ__Roles__8A2B6160B39AB150").IsUnique();
+
+            entity.Property(e => e.RoleName).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<Sanpham>(entity =>
         {
             entity.HasKey(e => e.MaSp);
@@ -209,12 +223,12 @@ public partial class OnlineShopContext : DbContext
             entity.ToTable("SANPHAM");
 
             entity.Property(e => e.MaSp).HasColumnName("MaSP");
-            entity.Property(e => e.Anh1).HasMaxLength(20);
-            entity.Property(e => e.Anh2).HasMaxLength(20);
-            entity.Property(e => e.Anh3).HasMaxLength(20);
-            entity.Property(e => e.Anh4).HasMaxLength(20);
-            entity.Property(e => e.Anh5).HasMaxLength(20);
-            entity.Property(e => e.Anh6).HasMaxLength(20);
+            entity.Property(e => e.Anh1).HasMaxLength(100);
+            entity.Property(e => e.Anh2).HasMaxLength(100);
+            entity.Property(e => e.Anh3).HasMaxLength(100);
+            entity.Property(e => e.Anh4).HasMaxLength(100);
+            entity.Property(e => e.Anh5).HasMaxLength(100);
+            entity.Property(e => e.Anh6).HasMaxLength(100);
             entity.Property(e => e.MoTa).HasMaxLength(1000);
             entity.Property(e => e.TenSp)
                 .HasMaxLength(100)
@@ -249,6 +263,23 @@ public partial class OnlineShopContext : DbContext
             entity.HasOne(d => d.MaCvNavigation).WithMany(p => p.Taikhoans)
                 .HasForeignKey(d => d.MaCv)
                 .HasConstraintName("FK_TAIKHOAN_ChucVu");
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.RoleId }).HasName("PK__UserRole__AF2760ADC2DA84DC");
+
+            entity.Property(e => e.Ten)
+                .HasMaxLength(10)
+                .IsFixedLength();
+
+            entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.RoleId)
+                .HasConstraintName("FK__UserRoles__RoleI__06CD04F7");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK__UserRoles__UserI__05D8E0BE");
         });
 
         modelBuilder.Entity<Vanchuyen>(entity =>

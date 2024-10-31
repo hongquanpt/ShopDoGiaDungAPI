@@ -16,98 +16,31 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             _context = context;
         }
 
-        public async Task<IActionResult> GetRoles(int page, int pageSize)
+        public async Task<List<Role>> GetUserRolesAsync(int userId)
         {
-            var query = _context.ChucVus.AsQueryable();
-
-            var totalItemCount = await query.CountAsync();
-            var roles = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            return new OkObjectResult(new
-            {
-                roles = roles,
-                totalItems = totalItemCount,
-                page = page,
-                pageSize = pageSize
-            });
+            return await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.Role)
+                .ToListAsync();
         }
 
-        public async Task<IActionResult> AddRole(ChucVuQuyen roleDto)
+        public async Task AssignRoleToUserAsync(int userId, int roleId)
         {
-            var role = new ChucVu
-            {
-                Ten = roleDto.TenCV
-            };
-            _context.ChucVus.Add(role);
+            var userRole = new UserRole { UserId = userId, RoleId = roleId };
+            _context.UserRoles.Add(userRole);
             await _context.SaveChangesAsync();
-
-            return new OkObjectResult(new { status = true });
         }
 
-        public async Task<IActionResult> UpdateRole(int roleId, ChucVuQuyen roleDto)
+        public async Task RemoveRoleFromUserAsync(int userId, int roleId)
         {
-            var role = await _context.ChucVus.FindAsync(roleId);
-            if (role == null)
+            var userRole = await _context.UserRoles
+                .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+            if (userRole != null)
             {
-                return new NotFoundObjectResult(new { status = false, message = "Không tìm thấy vai trò" });
+                _context.UserRoles.Remove(userRole);
+                await _context.SaveChangesAsync();
             }
-
-            role.Ten = roleDto.TenCV;
-            await _context.SaveChangesAsync();
-
-            return new OkObjectResult(new { status = true });
-        }
-
-        public async Task<IActionResult> DeleteRole(int roleId)
-        {
-            var role = await _context.ChucVus.FindAsync(roleId);
-            if (role == null)
-            {
-                return new NotFoundObjectResult(new { status = false, message = "Không tìm thấy vai trò" });
-            }
-
-            _context.ChucVus.Remove(role);
-            await _context.SaveChangesAsync();
-
-            return new OkObjectResult(new { status = true });
-        }
-
-        public async Task<IActionResult> GetPermissions(int roleId)
-        {
-            var permissions = await (from qcv in _context.CvQAs
-                                     join q in _context.Quyens on qcv.MaQ equals q.MaQ
-                                     join a in _context.ActionTs on qcv.MaA equals a.MaA
-                                     where qcv.MaCv == roleId
-                                     select new ChucVuQuyen
-                                     {
-                                         MaQ = q.MaQ,
-                                         TenQ = q.Ten,
-                                         MaA = a.MaA,
-                                         TenA = a.TenA,
-                                         ControllerName = q.ControllerName,
-                                         ActionName = q.ActionName
-                                     }).ToListAsync();
-
-            return new OkObjectResult(new { permissions = permissions });
-        }
-
-        public async Task<IActionResult> UpdatePermissions(int roleId, ChucVuQuyen permissionUpdateDto)
-        {
-            // Xóa các quyền cũ
-            var oldPermissions = _context.CvQAs.Where(q => q.MaCv == roleId);
-            _context.CvQAs.RemoveRange(oldPermissions);
-
-            // Thêm các quyền mới
-            var newCVA = new CvQA
-            {
-                MaCv = roleId,
-                MaQ = permissionUpdateDto.MaQ,
-                MaA = permissionUpdateDto.MaA
-            };
-            _context.CvQAs.AddRange(newCVA);
-            await _context.SaveChangesAsync();
-
-            return new OkObjectResult(new { status = true });
         }
     }
+
 }

@@ -26,4 +26,6 @@ public partial class Taikhoan
     public virtual ICollection<GioHang> GioHangs { get; set; } = new List<GioHang>();
 
     public virtual ChucVu? MaCvNavigation { get; set; }
+
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

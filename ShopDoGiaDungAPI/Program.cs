@@ -19,13 +19,7 @@ builder.Services.AddDbContext<OnlineShopContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyDB"));
 });
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout set to 30 minutes
-    options.Cookie.HttpOnly = true; // Ensures the session cookie is accessible only via HTTP requests
-    options.Cookie.IsEssential = true; // Indicates the session cookie is required for the application
-});
+
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IBrandService, BrandService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -35,6 +29,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMinioService, MinioService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
@@ -69,10 +66,22 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPolicy", policy =>
-        policy.RequireRole("Admin")); // Chỉ cho Admin truy cập
-    // Thêm các policy khác nếu cần
+        policy.RequireRole("admin")); // Chỉ cho Admin truy cập
+                                      // Thêm các policy khác nếu cần
+    options.AddPolicy("UserPolicy", policy =>
+       policy.RequireRole("user"));
+    options.AddPolicy("ModPolicy", policy =>
+       policy.RequireRole("mod"));
 });
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout set to 30 minutes
+    options.Cookie.HttpOnly = true; // Ensures the session cookie is accessible only via HTTP requests
+    options.Cookie.IsEssential = true; // Indicates the session cookie is required for the application
+});
+builder.Services.AddDistributedMemoryCache();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -100,6 +109,8 @@ if (app.Environment.IsDevelopment())
 //        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_secret_key"))
 //    };
 //});
+
+
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAllOrigins");
@@ -109,8 +120,8 @@ app.UseAuthentication(); // Thêm Authentication Middleware
 app.UseAuthorization();  // Thêm Authorization Middleware
 
 app.UseAuthorization();
-
 app.UseSession();
+
 
 app.MapControllers();
 

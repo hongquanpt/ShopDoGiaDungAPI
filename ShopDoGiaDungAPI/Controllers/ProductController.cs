@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class ProductController : ControllerBase
@@ -17,9 +19,9 @@ namespace ShopDoGiaDungAPI.Controllers
             _productService = productService;
             _minioService = minioService;
         }
-
+        [AllowAnonymous]
         [HttpGet("QuanLySP")]
-        public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 5)
+        public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 10000)
         {
             return await _productService.GetProducts(page, pageSize);
         }

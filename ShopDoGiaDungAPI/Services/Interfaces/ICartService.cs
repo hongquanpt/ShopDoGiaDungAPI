@@ -6,11 +6,11 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
     public interface ICartService
     {
         IActionResult GetCart(ISession session);
-        JsonResult AddItemToCart(int productId, ISession session);
+        JsonResult AddItemToCart(int productId, ISession session, bool checkOnly);
         ActionResult GetCartTotal(ISession session);
         JsonResult DeleteItemFromCart(long productId, ISession session);
-        JsonResult UpdateCartItem(int productId, int amount, ISession session);
+        JsonResult UpdateCartItemQuantity(int productId, int quantity);
         JsonResult ClearCart(ISession session);
-        Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, ISession session, int userId);
+        Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? userId);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Models;
 
 namespace ShopDoGiaDungAPI.Services.Interfaces
 {
@@ -9,7 +11,8 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         IActionResult ConfirmOrder(int orderId);
         IActionResult ShipOrder(int orderId);
         IActionResult CancelOrder(int orderId);
-        IActionResult GetOrderDetails(int orderId);
+        Task<List<Donhang>> GetPendingOrdersAsync();
+        Task<List<MyOrderDetail>> GetOrderDetails(int orderId);
 
         // Home functions
         Task<IActionResult> GetUserOrders(int userId, string typeMenu, int pageIndex, int pageSize);
