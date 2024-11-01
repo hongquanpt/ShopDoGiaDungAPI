@@ -4,6 +4,7 @@ using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Linq;
 
 namespace ShopDoGiaDungAPI.Services.Implementations
 {
@@ -350,32 +351,67 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             });
         }
 
-        public async Task<IActionResult> SearchProducts(string? search, int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice)
+        public async Task<IActionResult> SearchProducts(
+     string? search,
+     string? idCategories,
+     string? idHangs,
+     int pageIndex,
+     int pageSize,
+     string? maxPrice,
+     string? minPrice,
+     string orderPrice)
         {
             // Khởi tạo query sản phẩm
             IQueryable<Sanpham> model = _context.Sanphams;
 
-            // Kiểm tra và áp dụng điều kiện tìm kiếm tên sản phẩm nếu có
+            // Áp dụng bộ lọc theo danh mục nếu có
+            if (!string.IsNullOrEmpty(idCategories))
+            {
+                int[] arrayCategory = Array.ConvertAll(idCategories.Split(","), int.Parse);
+                model = model.Where(item => arrayCategory.Contains(item.MaDanhMuc??0));
+            }
+
+            // Áp dụng bộ lọc theo hãng nếu có
+            if (!string.IsNullOrEmpty(idHangs))
+            {
+                int[] arrayIdHang = Array.ConvertAll(idHangs.Split(","), int.Parse);
+                model = model.Where(item => arrayIdHang.Contains(item.MaHang ?? 0));
+            }
+
+            // Áp dụng điều kiện tìm kiếm theo tên sản phẩm nếu có
             if (!string.IsNullOrEmpty(search))
             {
                 model = model.Where(s => s.TenSp.Contains(search));
             }
-            if (maxPrice != 0)
+
+            // Áp dụng bộ lọc theo giá tối đa nếu có
+            if (!string.IsNullOrEmpty(maxPrice) && int.TryParse(maxPrice, out int priceMax))
             {
-                model = model.Where(item => item.GiaTien < maxPrice && item.GiaTien > minPrice);
+                model = model.Where(item => item.GiaTien <= priceMax);
             }
 
+            // Áp dụng bộ lọc theo giá tối thiểu nếu có
+            if (!string.IsNullOrEmpty(minPrice) && int.TryParse(minPrice, out int priceMin))
+            {
+                model = model.Where(item => item.GiaTien >= priceMin);
+            }
+
+            // Sắp xếp theo giá
             model = orderPrice == "tang" ? model.OrderBy(item => item.GiaTien) : model.OrderByDescending(item => item.GiaTien);
 
+            // Đếm tổng số sản phẩm phù hợp với bộ lọc
             var count = await model.CountAsync();
+
+            // Lấy dữ liệu trang
             var dt = await model.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
 
-            // Tạo Pre-signed URL cho ảnh sản phẩm
+            // Tạo URL tạm thời cho ảnh sản phẩm
             foreach (var sp in dt)
             {
                 sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
             }
 
+            // Trả về kết quả
             return new OkObjectResult(new
             {
                 sanpham = dt,
@@ -385,6 +421,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 totalCount = count
             });
         }
+
 
     }
 }

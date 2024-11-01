@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Services.Implementations
@@ -79,6 +81,10 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             {
                 return new NotFoundObjectResult(new { status = false, message = "Không tìm thấy tài khoản" });
             }
+        }
+        public async Task<Taikhoan> GetAccountByIdAsync(int maTaiKhoan)
+        {
+            return await _context.Taikhoans.FirstOrDefaultAsync(a => a.MaTaiKhoan == maTaiKhoan);
         }
     }
 }

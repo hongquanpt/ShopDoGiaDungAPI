@@ -52,9 +52,25 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpGet("Search")]
-        public async Task<IActionResult> Search(string? search, int PageIndex = 1, int PageSize = 100, int maxPrice =100000000, int minPrice = 0, string orderPrice = "tang")
+        public async Task<IActionResult> Search(
+          string? search,
+          string? idCategories,
+          string? idHangs,
+          int pageIndex = 1,
+          int pageSize = 100,
+          string maxPrice = "100000000",
+          string minPrice = "0",
+          string orderPrice = "tang")
         {
-            return await _productService.SearchProducts(search, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
+            return await _productService.SearchProducts(
+                search,
+                idCategories,
+                idHangs,
+                pageIndex,
+                pageSize,
+                maxPrice,
+                minPrice,
+                orderPrice);
         }
 
         [HttpGet("MyOrder")]
@@ -73,15 +89,23 @@ namespace ShopDoGiaDungAPI.Controllers
         public async Task<IActionResult> ChangeProfile([FromBody] TaiKhoanDto tk)
         {
             var result = await _userService.UpdateUserProfile(tk);
-            if (result is OkObjectResult)
+
+            if (result is OkObjectResult okResult)
             {
-                // Cập nhật session nếu cần
-                HttpContext.Session.SetString("email", tk.Email);
-                HttpContext.Session.SetString("SDT", tk.Sdt);
-                HttpContext.Session.SetString("DiaChi", tk.DiaChi);
+                dynamic response = okResult.Value;
+                if (response.status == true)
+                {
+                    HttpContext.Session.SetString("email", tk.Email);
+                    HttpContext.Session.SetString("SDT", tk.Sdt);
+                    HttpContext.Session.SetString("DiaChi", tk.DiaChi);
+                    return new OkObjectResult(response);
+                }
             }
+
             return result;
         }
+
+
 
         [HttpPost("HuyDonHang")]
         public async Task<IActionResult> HuyDonHang(int ma)

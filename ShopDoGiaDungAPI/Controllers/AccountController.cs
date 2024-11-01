@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -35,6 +36,20 @@ namespace ShopDoGiaDungAPI.Controllers
         public IActionResult XoaTK(int matk)
         {
             return _accountService.DeleteAccount(matk);
+        }
+        [HttpGet("accounts/{maTaiKhoan}")]
+        [Authorize] // Yêu cầu đăng nhập
+        public async Task<IActionResult> GetAccount(int maTaiKhoan)
+        {
+            // Lấy thông tin tài khoản từ cơ sở dữ liệu
+            var account = await _accountService.GetAccountByIdAsync(maTaiKhoan);
+
+            if (account == null)
+            {
+                return NotFound("Không tìm thấy tài khoản.");
+            }
+
+            return Ok(account);
         }
         // GET: api/User/{userId}/roles
         [HttpGet("{userId}/roles")]
