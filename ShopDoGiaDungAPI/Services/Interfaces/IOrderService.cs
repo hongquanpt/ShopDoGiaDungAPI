@@ -7,7 +7,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
     public interface IOrderService
     {
         // Admin functions
-        IActionResult GetOrders(int? status, int page, int pageSize);
+        IActionResult GetOrders(int status, int page, int pageSize);
         IActionResult ConfirmOrder(int orderId);
         IActionResult ShipOrder(int orderId);
         IActionResult CancelOrder(int orderId);

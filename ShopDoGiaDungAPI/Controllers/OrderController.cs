@@ -4,7 +4,7 @@ using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-    [Authorize]
+    //[Authorize(Roles = "admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class OrderController : ControllerBase
@@ -17,7 +17,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpGet("orders")]
-        public IActionResult QuanLyDH(int? tinhTrang = null, int page = 1, int pageSize = 100)
+        public IActionResult QuanLyDH(int tinhTrang = 10, int page = 1, int pageSize = 100)
         {
             return _orderService.GetOrders(tinhTrang, page, pageSize);
         }

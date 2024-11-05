@@ -26,40 +26,80 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             return orders;
         }
         // Admin functions
-        public IActionResult GetOrders(int? status, int page, int pageSize)
+        public IActionResult GetOrders(int status, int page, int pageSize)
         {
-            var allOrders = from a in _context.Donhangs
-                            join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
-                            select new MyOrder()
-                            {
-                                MaDonHang = a.MaDonHang,
-                                TongTien = a.TongTien,
-                                NguoiNhan = b.NguoiNhan,
-                                DiaChi = b.DiaChi,
-                                NgayMua = a.NgayLap,
-                                TinhTrang = a.TinhTrang
-                            };
+            //var allOrders = from a in _context.Donhangs
+            //                join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+            //                select new MyOrder()
+            //                {
+            //                    MaDonHang = a.MaDonHang,
+            //                    TongTien = a.TongTien,
+            //                    NguoiNhan = b.NguoiNhan,
+            //                    DiaChi = b.DiaChi,
+            //                    NgayMua = a.NgayLap,
+            //                    TinhTrang = a.TinhTrang
+            //                };
 
-            if (status.HasValue)
+            if(status== 10)
             {
-                allOrders = allOrders.Where(o => o.TinhTrang == status.Value);
+                var allOrders = from a in _context.Donhangs
+                                join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                                select new MyOrder()
+                                {
+                                    MaDonHang = a.MaDonHang,
+                                    TongTien = a.TongTien,
+                                    NguoiNhan = b.NguoiNhan,
+                                    DiaChi = b.DiaChi,
+                                    NgayMua = a.NgayLap,
+                                    TinhTrang = a.TinhTrang
+                                };
+                var model = allOrders.OrderByDescending(o => o.MaDonHang)
+                                 .Skip((page - 1) * pageSize)
+                                 .Take(pageSize)
+                                 .ToList();
+
+                var totalItemCount = allOrders.Count();
+
+                return new OkObjectResult(new
+                {
+                    data = model,
+                    totalItems = totalItemCount,
+                    page = page,
+                    pageSize = pageSize,
+                    totalPages = (totalItemCount + pageSize - 1) / pageSize
+                });
             }
-
-            var model = allOrders.OrderByDescending(o => o.MaDonHang)
-                                  .Skip((page - 1) * pageSize)
-                                  .Take(pageSize)
-                                  .ToList();
-
-            var totalItemCount = allOrders.Count();
-
-            return new OkObjectResult(new
+            else
             {
-                data = model,
-                totalItems = totalItemCount,
-                page = page,
-                pageSize = pageSize,
-                totalPages = (totalItemCount + pageSize - 1) / pageSize
-            });
+                var allOrders = from a in _context.Donhangs
+                                join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                                select new MyOrder()
+                                {
+                                    MaDonHang = a.MaDonHang,
+                                    TongTien = a.TongTien,
+                                    NguoiNhan = b.NguoiNhan,
+                                    DiaChi = b.DiaChi,
+                                    NgayMua = a.NgayLap,
+                                    TinhTrang = a.TinhTrang
+                                };
+                allOrders = allOrders.Where(o => o.TinhTrang == status);
+                var model = allOrders.OrderByDescending(o => o.MaDonHang)
+                                 .Skip((page - 1) * pageSize)
+                                 .Take(pageSize)
+                                 .ToList();
+
+                var totalItemCount = allOrders.Count();
+
+                return new OkObjectResult(new
+                {
+                    data = model,
+                    totalItems = totalItemCount,
+                    page = page,
+                    pageSize = pageSize,
+                    totalPages = (totalItemCount + pageSize - 1) / pageSize
+                });
+            }
+           
         }
 
         public IActionResult ConfirmOrder(int orderId)
