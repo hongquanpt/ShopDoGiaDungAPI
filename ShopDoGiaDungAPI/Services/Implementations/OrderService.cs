@@ -173,8 +173,9 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
 
         // Home functions
-        public async Task<IActionResult> GetUserOrders(int userId, string typeMenu, int pageIndex, int pageSize)
+        public async Task<IActionResult> GetUserOrders(string user, string typeMenu, int pageIndex, int pageSize)
         {
+            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user).MaTaiKhoan;
             IQueryable<Donhang> query = typeMenu switch
             {
                 "tatca" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId),

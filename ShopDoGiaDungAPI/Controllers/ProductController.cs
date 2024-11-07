@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
@@ -28,9 +29,21 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpPost("ThemSP")]
-        public async Task<IActionResult> ThemSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] int DanhMuc, [FromForm] int Hang)
+        public async Task<IActionResult> ThemSP([FromForm] SanphamDto model)
         {
-            return await _productService.AddProduct(spmoi, images, DanhMuc, Hang);
+            try
+            {
+                await _productService.AddProduct(model);
+                return Ok(new { status = true, message = "Thêm sản phẩm thành công." });
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(new { status = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { status = false, message = ex.Message });
+            }
         }
 
         [HttpDelete("XoaSP/{maSP}")]

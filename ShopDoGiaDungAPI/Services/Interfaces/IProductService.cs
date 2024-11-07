@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
 
 namespace ShopDoGiaDungAPI.Services.Interfaces
@@ -7,7 +8,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
     {
         // Admin functions
         Task<IActionResult> GetProducts(int page, int pageSize);
-        Task<IActionResult> AddProduct(Sanpham product, IFormFile[] images, int category, int brand);
+        Task AddProduct(SanphamDto model);
         Task<IActionResult> DeleteProduct(int productId);
         Task<IActionResult> UpdateProduct(Sanpham product, IFormFile[] images, string category, string brand);
 

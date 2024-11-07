@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Security.Claims;
+
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -76,13 +78,22 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpGet("MyOrder")]
         public async Task<IActionResult> MyOrder(string typeMenu = "tatca", int PageIndex = 1, int PageSize = 100)
         {
-            var userId = HttpContext.Session.GetInt32("Ma");
+            // Lấy userId từ Claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                return Unauthorized();
+            }
+            
+            string userId = userIdClaim.Value.ToString();
+           
             if (userId == null)
             {
                 return Unauthorized();
             }
 
-            return await _orderService.GetUserOrders(userId.Value, typeMenu, PageIndex, PageSize);
+            return await _orderService.GetUserOrders(userId, typeMenu, PageIndex, PageSize);
         }
 
         [HttpPost("ChangeProfile")]

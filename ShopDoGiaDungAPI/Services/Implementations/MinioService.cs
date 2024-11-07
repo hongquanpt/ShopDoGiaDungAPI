@@ -46,13 +46,9 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     .WithContentType(file.ContentType));
             }
 
-            // Tạo Pre-signed URL có thời hạn (ví dụ: 1 giờ)
-            string presignedUrl = await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
-                .WithBucket(_bucketName)
-                .WithObject(fileName)
-                .WithExpiry(3600)); // URL có hiệu lực trong 3600 giây (1 giờ)
-
-            return presignedUrl;
+            // Không tạo Presigned URL ở đây
+            // Chỉ trả về tên tệp
+            return fileName;
         }
 
         public async Task<string> GetPreSignedUrlAsync(string fileName)

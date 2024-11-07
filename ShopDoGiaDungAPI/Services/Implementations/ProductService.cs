@@ -70,46 +70,77 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             });
         }
 
-        public async Task<IActionResult> AddProduct(Sanpham spmoi, IFormFile[] images, int DanhMuc, int Hang)
+        public async Task AddProduct(SanphamDto model)
         {
-            // Lưu ảnh lên MinIO
-            for (int i = 0; i < images.Length && i < 6; i++)
+            if (model == null)
             {
-                if (images[i] != null && images[i].Length > 0)
-                {
-                    string imageUrl;
-                    try
-                    {
-                        imageUrl = await _minioService.UploadFileAsync(images[i]);
-                    }
-                    catch (Exception ex)
-                    {
-                        return new BadRequestObjectResult(new { status = false, message = $"Lỗi khi tải ảnh lên MinIO: {ex.Message}" });
-                    }
-
-                    switch (i)
-                    {
-                        case 0: spmoi.Anh1 = imageUrl; break;
-                        case 1: spmoi.Anh2 = imageUrl; break;
-                        case 2: spmoi.Anh3 = imageUrl; break;
-                        case 3: spmoi.Anh4 = imageUrl; break;
-                        case 4: spmoi.Anh5 = imageUrl; break;
-                        case 5: spmoi.Anh6 = imageUrl; break;
-                    }
-                }
+                throw new ArgumentNullException(nameof(model), "Thông tin sản phẩm không hợp lệ.");
             }
 
-            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.MaDanhMuc == DanhMuc);
-            if (dm != null) spmoi.MaDanhMuc = dm.MaDanhMuc;
+            // Tạo đối tượng Sanpham từ model
+            var spmoi = new Sanpham
+            {
+                TenSp = model.TenSP,
+                MoTa = model.MoTa,
+                SoLuongTrongKho = model.SoLuongTrongKho,
+                GiaTien = model.GiaTien,
+                MaDanhMuc = model.DanhMuc,
+                MaHang = model.Hang,
+                SoLuongDaBan = 0
+            };
 
-            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.MaHang == Hang);
-            if (hang != null) spmoi.MaHang = hang.MaHang;
-            spmoi.SoLuongDaBan = 0;
-            _context.Sanphams.Add(spmoi);
-            await _context.SaveChangesAsync();
+            // Danh sách để lưu tên hoặc URL ảnh
+            var imageUrls = new List<string>();
 
-            return new OkObjectResult(new { status = true });
+            // Lưu ảnh lên MinIO và lưu tên ảnh vào cơ sở dữ liệu
+            if (model.Images != null && model.Images.Length > 0)
+            {
+                for (int i = 0; i < model.Images.Length && i < 6; i++)
+                {
+                    var image = model.Images[i];
+                    if (image != null && image.Length > 0)
+                    {
+                        string imageUrl;
+                        try
+                        {
+                            // Tải ảnh lên MinIO và lấy URL hoặc tên ảnh
+                            imageUrl = await _minioService.UploadFileAsync(image);
+
+                            // Thêm URL vào danh sách
+                            imageUrls.Add(imageUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"Lỗi khi tải ảnh lên MinIO: {ex.Message}");
+                        }
+                    }
+                }
+
+                // Gán URL ảnh vào các thuộc tính tương ứng trong spmoi
+                if (imageUrls.Count > 0) spmoi.Anh1 = imageUrls.ElementAtOrDefault(0);
+                if (imageUrls.Count > 1) spmoi.Anh2 = imageUrls.ElementAtOrDefault(1);
+                if (imageUrls.Count > 2) spmoi.Anh3 = imageUrls.ElementAtOrDefault(2);
+                if (imageUrls.Count > 3) spmoi.Anh4 = imageUrls.ElementAtOrDefault(3);
+                if (imageUrls.Count > 4) spmoi.Anh5 = imageUrls.ElementAtOrDefault(4);
+                if (imageUrls.Count > 5) spmoi.Anh6 = imageUrls.ElementAtOrDefault(5);
+            }
+            else
+            {
+                throw new Exception("Vui lòng tải lên ít nhất một ảnh cho sản phẩm.");
+            }
+
+            // Thêm sản phẩm vào cơ sở dữ liệu
+            try
+            {
+                _context.Sanphams.Add(spmoi);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lưu sản phẩm: {ex.Message}");
+            }
         }
+
 
         public async Task<IActionResult> DeleteProduct(int productId)
         {
