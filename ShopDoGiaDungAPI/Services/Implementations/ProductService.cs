@@ -70,7 +70,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             });
         }
 
-        public async Task<IActionResult> AddProduct(Sanpham spmoi, IFormFile[] images, string DanhMuc, string Hang)
+        public async Task<IActionResult> AddProduct(Sanpham spmoi, IFormFile[] images, int DanhMuc, int Hang)
         {
             // Lưu ảnh lên MinIO
             for (int i = 0; i < images.Length && i < 6; i++)
@@ -99,12 +99,12 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 }
             }
 
-            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.TenDanhMuc == DanhMuc);
+            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.MaDanhMuc == DanhMuc);
             if (dm != null) spmoi.MaDanhMuc = dm.MaDanhMuc;
 
-            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.TenHang == Hang);
+            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.MaHang == Hang);
             if (hang != null) spmoi.MaHang = hang.MaHang;
-
+            spmoi.SoLuongDaBan = 0;
             _context.Sanphams.Add(spmoi);
             await _context.SaveChangesAsync();
 
@@ -132,7 +132,36 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             return new OkObjectResult(new { status = true });
         }
+        public async Task<(bool IsSuccess, string Message)> UpdateCartItemQuantityAsync(int productId, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                return (false, "Số lượng phải lớn hơn 0.");
+            }
 
+            // Truy xuất sản phẩm từ cơ sở dữ liệu
+            var product = await _context.Sanphams.FirstOrDefaultAsync(p => p.MaSp == productId);
+
+            if (product == null)
+            {
+                return (false, "Sản phẩm không tồn tại.");
+            }
+
+            // Kiểm tra tồn kho
+            if (product.SoLuongTrongKho < quantity)
+            {
+                return (false, $"Số lượng yêu cầu vượt quá tồn kho. Tồn kho hiện tại: {product.SoLuongTrongKho}.");
+            }
+
+            // Nếu cần, bạn có thể cập nhật số lượng trong cơ sở dữ liệu tại đây
+            // Ví dụ: Giảm tồn kho nếu muốn cập nhật tồn kho theo giỏ hàng
+            // product.Stock -= quantity;
+            // _context.Products.Update(product);
+            // await _context.SaveChangesAsync();
+
+            // Trả về phản hồi thành công
+            return (true, "Số lượng sản phẩm còn đủ.");
+        }
         public async Task<IActionResult> UpdateProduct(Sanpham spmoi, IFormFile[] images, string DanhMuc, string Hang)
         {
             var sp = await _context.Sanphams.FindAsync(spmoi.MaSp);

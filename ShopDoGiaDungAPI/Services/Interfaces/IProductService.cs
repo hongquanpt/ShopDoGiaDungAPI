@@ -7,7 +7,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
     {
         // Admin functions
         Task<IActionResult> GetProducts(int page, int pageSize);
-        Task<IActionResult> AddProduct(Sanpham product, IFormFile[] images, string category, string brand);
+        Task<IActionResult> AddProduct(Sanpham product, IFormFile[] images, int category, int brand);
         Task<IActionResult> DeleteProduct(int productId);
         Task<IActionResult> UpdateProduct(Sanpham product, IFormFile[] images, string category, string brand);
 
@@ -17,6 +17,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         Task<IActionResult> GetProductsByCategory(int categoryId, string categoryName, int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice);
         Task<IActionResult> GetProductDetail(int productId);
         Task<IActionResult> GetAllProducts(int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice);
+        Task<(bool IsSuccess, string Message)> UpdateCartItemQuantityAsync(int productId, int quantity);
         Task<IActionResult> SearchProducts(
          string? search,
          string? idCategories,
