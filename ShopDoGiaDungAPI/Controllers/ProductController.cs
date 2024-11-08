@@ -21,13 +21,13 @@ namespace ShopDoGiaDungAPI.Controllers
             _productService = productService;
             _minioService = minioService;
         }
-        [AllowAnonymous]
+        [Authorize(Roles = "admin")]
         [HttpGet("QuanLySP")]
         public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 10000)
         {
             return await _productService.GetProducts(page, pageSize);
         }
-
+        [Authorize(Roles = "admin")]
         [HttpPost("ThemSP")]
         public async Task<IActionResult> ThemSP([FromForm] SanphamDto model)
         {
@@ -45,13 +45,13 @@ namespace ShopDoGiaDungAPI.Controllers
                 return BadRequest(new { status = false, message = ex.Message });
             }
         }
-
+        [Authorize(Roles = "admin")]
         [HttpDelete("XoaSP/{maSP}")]
         public async Task<IActionResult> XoaSP(int maSP)
         {
             return await _productService.DeleteProduct(maSP);
         }
-
+        [Authorize(Roles = "admin")]
         [HttpPut("SuaSP")]
         public async Task<IActionResult> SuaSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] string DanhMuc, [FromForm] string Hang)
         {

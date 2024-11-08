@@ -11,6 +11,6 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         JsonResult DeleteItemFromCart(long productId, ISession session);
         JsonResult UpdateCartItemQuantity(int productId, int quantity);
         JsonResult ClearCart(ISession session);
-        Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? userId);
+        Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, string? userId);
     }
 }

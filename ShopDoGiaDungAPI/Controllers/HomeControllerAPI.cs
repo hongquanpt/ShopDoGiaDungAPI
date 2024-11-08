@@ -88,10 +88,6 @@ namespace ShopDoGiaDungAPI.Controllers
             
             string userId = userIdClaim.Value.ToString();
            
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
 
             return await _orderService.GetUserOrders(userId, typeMenu, PageIndex, PageSize);
         }

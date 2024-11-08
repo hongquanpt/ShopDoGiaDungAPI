@@ -15,7 +15,7 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             _orderService = orderService;
         }
-
+        [Authorize(Roles = "admin")]
         [HttpGet("orders")]
         public IActionResult QuanLyDH(int tinhTrang = 10, int page = 1, int pageSize = 100)
         {
@@ -52,6 +52,7 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return Ok(orderDetails);
         }
+        [Authorize(Roles = "admin")]
         [HttpGet("pending")]
         public async Task<IActionResult> GetPendingOrders()
         {

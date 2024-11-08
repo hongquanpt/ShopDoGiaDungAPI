@@ -4,7 +4,7 @@ using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-    //[Authorize(Roles = "admin")]
+   
     [Route("api/[controller]")]
     [ApiController]
     public class CategoryController : ControllerBase
@@ -21,19 +21,19 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             return _categoryService.GetCategories(tendm, madm, page, pageSize);
         }
-
+        [Authorize(Roles = "admin")]
         [HttpPost("danhmucs")]
         public IActionResult ThemDM([FromBody] string tendm)
         {
             return _categoryService.AddCategory(tendm);
         }
-
+        [Authorize(Roles = "admin")]
         [HttpPut("danhmucs/{id}")]
         public IActionResult SuaDM(int id, [FromBody] string name)
         {
             return _categoryService.UpdateCategory(id, name);
         }
-
+        [Authorize(Roles = "admin")]
         [HttpDelete("danhmucs/{madm}")]
         public IActionResult XoaDM(int madm)
         {

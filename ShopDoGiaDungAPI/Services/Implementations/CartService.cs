@@ -175,8 +175,9 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         }
 
         // Phương thức thanh toán
-        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? userId = null)
+        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, string? user = null)
         {
+            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user)?.MaTaiKhoan ?? 0;
             try
             {
                 // Kiểm tra thông tin thanh toán đầy đủ

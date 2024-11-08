@@ -175,20 +175,125 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         // Home functions
         public async Task<IActionResult> GetUserOrders(string user, string typeMenu, int pageIndex, int pageSize)
         {
-            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user).MaTaiKhoan;
-            IQueryable<Donhang> query = typeMenu switch
+            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user)?.MaTaiKhoan ?? 0;
+
+            
+
+            var query = typeMenu switch
             {
-                "tatca" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId),
-                "chuathanhtoan" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 0),
-                "choxacnhan" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 1),
-                "dangvanchuyen" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 2),
-                "dahoanthanh" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 3),
-                "dahuy" => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 4),
-                _ => _context.Donhangs.Include(item => item.Vanchuyen).Where(a => a.MaTaiKhoan == userId)
+                "tatca" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                "chuathanhtoan" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 0)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                "choxacnhan" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 1)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                "dangvanchuyen" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 2)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                "dahoanthanh" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 3)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                "dahuy" => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId && a.TinhTrang == 4)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    }),
+                _ => _context.Donhangs
+                    .Where(a => a.MaTaiKhoan == userId)
+                    .Include(item => item.Vanchuyen)
+                    .Select(a => new DonhangDto
+                    {
+                        MaDonHang = a.MaDonHang,
+                        TinhTrang = a.TinhTrang,
+                        NgayDatHang = a.NgayLap,
+                        TongTien = a.TongTien,
+                        Vanchuyen = new VanchuyenDto
+                        {
+                            NguoiNhan = a.Vanchuyen.NguoiNhan,
+                            DiaChi = a.Vanchuyen.DiaChi
+                        }
+                    })
             };
 
             var count = await query.CountAsync();
-            var dt = await query.OrderByDescending(item => item.MaDonHang).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var dt = await query
+                .OrderByDescending(item => item.MaDonHang)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             return new OkObjectResult(new
             {

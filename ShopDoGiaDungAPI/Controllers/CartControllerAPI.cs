@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -58,8 +59,12 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpPost("ThanhToan")]
         public async Task<JsonResult> ThanhToan([FromBody] ThongTinThanhToan thanhToan)
         {
-            int ? userId = HttpContext.Session.GetInt32("Ma");
+            // Lấy userId từ Claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
            
+            string userId = userIdClaim.Value.ToString();
+
 
             return await _cartService.Checkout(thanhToan, userId);
         }
