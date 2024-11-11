@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
@@ -6,7 +7,9 @@ using System.Security.Claims;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+
     [Route("api/[controller]")]
+    [EnableCors("MyAllowedOrigins")]
     [ApiController]
     public class AccessControllerAPI : ControllerBase
     {
@@ -18,11 +21,18 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [AllowAnonymous]
+       
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginInfo loginInfo)
         {
+            if (loginInfo == null || string.IsNullOrEmpty(loginInfo.Email) || string.IsNullOrEmpty(loginInfo.Password))
+            {
+                return BadRequest(new { status = false, message = "Thông tin đăng nhập không hợp lệ." });
+            }
+
             return await _authService.Login(loginInfo);
         }
+
 
         [AllowAnonymous]
         [HttpPost("register")]

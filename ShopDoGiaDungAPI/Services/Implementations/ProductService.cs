@@ -363,7 +363,10 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             double sao = danhgia.Count() > 0 ? Math.Round((double)sum / danhgia.Count(), 1) : 0;
 
             var sp = await _context.Sanphams.FindAsync(productId);
-
+            if(sp == null)
+            {
+                return new OkObjectResult(new { status = false });
+            }
             // Tạo Pre-signed URL cho ảnh sản phẩm
             sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
             sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2);

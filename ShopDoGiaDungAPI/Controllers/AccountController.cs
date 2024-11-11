@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
+
     [Authorize(Roles = "admin")]
     [Route("api/[controller]")]
     [ApiController]

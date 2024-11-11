@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
@@ -10,6 +11,7 @@ namespace ShopDoGiaDungAPI.Controllers
     [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("MyAllowedOrigins")]
     public class HomeControllerAPI : ControllerBase
     {
         private readonly IProductService _productService;
@@ -41,10 +43,15 @@ namespace ShopDoGiaDungAPI.Controllers
             return await _productService.GetProductsByCategory(idCategory, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
         }
 
-        [HttpGet("ProductDetail/{id}")]
-        public async Task<IActionResult> ProductDetail(int id)
+        [HttpPost("ProductDetail")]
+        public async Task<IActionResult> ProductDetail([FromBody] ProductDetailRequest request)
         {
-            return await _productService.GetProductDetail(id);
+            if (request == null || request.Id <= 0)
+            {
+                return BadRequest(new { status = false, message = "Invalid request data" });
+            }
+
+            return await _productService.GetProductDetail(request.Id);
         }
 
         [HttpGet("AllProduct")]

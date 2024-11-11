@@ -33,11 +33,18 @@ builder.Services.AddScoped<IMinioService, MinioService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 
+// Thêm dịch vụ CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins",
-        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    options.AddPolicy("MyAllowedOrigins", builder =>
+    {
+        builder.WithOrigins("https://localhost:7007", "https://localhost:7007") // Các origin bạn cho phép
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials(); // Chỉ nếu bạn cần gửi cookie hoặc thông tin xác thực
+    });
 });
+
 // Lấy cấu hình JWT từ appsettings.json hoặc Environment Variables
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
@@ -83,6 +90,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true; // Indicates the session cookie is required for the application
 });
 builder.Services.AddDistributedMemoryCache();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -114,11 +122,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAllOrigins");
+app.UseCors("MyAllowedOrigins");
 
 app.UseAuthentication(); // Thêm Authentication Middleware
 
-app.UseAuthorization();  // Thêm Authorization Middleware
 
 app.UseAuthorization();
 app.UseSession();

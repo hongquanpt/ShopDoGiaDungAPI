@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
@@ -10,6 +11,7 @@ namespace ShopDoGiaDungAPI.Controllers
     [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("MyAllowedOrigins")]
     public class CartControllerAPI : ControllerBase
     {
         private readonly ICartService _cartService;
@@ -25,10 +27,15 @@ namespace ShopDoGiaDungAPI.Controllers
             return _cartService.GetCart(HttpContext.Session);
         }
 
-        [HttpPost("AddItem/{productId}")]
-        public JsonResult AddItem(int productId, bool checkOnly = false)
+        [HttpPost("AddItem")]
+        public JsonResult AddItem([FromBody] AddItemRequest request)
         {
-            return _cartService.AddItemToCart(productId, HttpContext.Session, checkOnly);
+            if (request == null)
+            {
+                return new JsonResult(new { status = false, message = "Invalid request data" });
+            }
+
+            return _cartService.AddItemToCart(request.ProductId, HttpContext.Session, request.CheckOnly);
         }
 
 

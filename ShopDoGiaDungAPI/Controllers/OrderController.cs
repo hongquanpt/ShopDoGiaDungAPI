@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
@@ -7,6 +8,7 @@ namespace ShopDoGiaDungAPI.Controllers
     //[Authorize(Roles = "admin")]
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("MyAllowedOrigins")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;

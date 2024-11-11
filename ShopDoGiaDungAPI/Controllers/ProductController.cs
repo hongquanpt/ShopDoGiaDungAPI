@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopDoGiaDungAPI.DTO;
@@ -11,6 +12,7 @@ namespace ShopDoGiaDungAPI.Controllers
     [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
+    [EnableCors("MyAllowedOrigins")]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;

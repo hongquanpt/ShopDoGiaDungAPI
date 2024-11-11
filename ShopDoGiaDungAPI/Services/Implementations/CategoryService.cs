@@ -43,7 +43,16 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 madm = categoryId
             });
         }
-
+        public IActionResult GetCategorie( int categoryId)
+        {
+            var query = _context.Danhmucsanphams.Find(categoryId);
+            return new OkObjectResult(new
+            {
+               
+                tendm = query.TenDanhMuc,
+                madm = categoryId
+            });
+        }
         public IActionResult AddCategory(string categoryName)
         {
             var dm = new Danhmucsanpham

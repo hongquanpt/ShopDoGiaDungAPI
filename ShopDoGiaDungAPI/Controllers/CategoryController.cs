@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
    
     [Route("api/[controller]")]
+    [EnableCors("MyAllowedOrigins")]
     [ApiController]
     public class CategoryController : ControllerBase
     {
@@ -28,10 +31,22 @@ namespace ShopDoGiaDungAPI.Controllers
             return _categoryService.AddCategory(tendm);
         }
         [Authorize(Roles = "admin")]
+        // PUT: api/Category/danhmucs/{id}
         [HttpPut("danhmucs/{id}")]
-        public IActionResult SuaDM(int id, [FromBody] string name)
+        public  IActionResult SuaDM(int id, [FromBody] UpdateCategoryRequest request)
         {
-            return _categoryService.UpdateCategory(id, name);
+            if (request == null || string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest(new { status = false, message = "The name field is required." });
+            }
+
+            var result =  _categoryService.UpdateCategory(id, request.Name);
+            return Ok(result);
+        }
+        [HttpGet("danhmucs/{id}")]
+        public IActionResult DM(int id)
+        {
+            return _categoryService.GetCategorie(id);
         }
         [Authorize(Roles = "admin")]
         [HttpDelete("danhmucs/{madm}")]
