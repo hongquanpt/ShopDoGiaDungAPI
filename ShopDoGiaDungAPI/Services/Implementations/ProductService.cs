@@ -69,7 +69,48 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 pageSize = pageSize
             });
         }
+        public async Task<SanPhamct> GetProductDetailAsync(int productId)
+        {
+            // Truy vấn sản phẩm dựa trên productId
+            var sanpham = await (from sp in _context.Sanphams
+                                 join h in _context.Hangsanxuats on sp.MaHang equals h.MaHang
+                                 join dm in _context.Danhmucsanphams on sp.MaDanhMuc equals dm.MaDanhMuc
+                                 where sp.MaSp == productId
+                                 select new SanPhamct
+                                 {
+                                     MaSp = sp.MaSp,
+                                     TenSp = sp.TenSp,
+                                     MoTa = sp.MoTa,
+                                     Anh1 = sp.Anh1,
+                                     Anh2 = sp.Anh2,
+                                     Anh3 = sp.Anh3,
+                                     Anh4 = sp.Anh4,
+                                     Anh5 = sp.Anh5,
+                                     Anh6 = sp.Anh6,
+                                     SoLuongDaBan = sp.SoLuongDaBan,
+                                     SoLuongTrongKho = sp.SoLuongTrongKho,
+                                     GiaTien = sp.GiaTien,
+                                     Hang = h.TenHang,
+                                     DanhMuc = dm.TenDanhMuc,
+                                     MaH = h.MaHang,
+                                     MaDM = dm.MaDanhMuc
+                                 }).FirstOrDefaultAsync();
 
+            if (sanpham == null)
+            {
+                return null;
+            }
+
+            // Tạo Pre-signed URL cho mỗi ảnh
+            sanpham.Anh1 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh1);
+            sanpham.Anh2 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh2);
+            sanpham.Anh3 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh3);
+            sanpham.Anh4 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh4);
+            sanpham.Anh5 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh5);
+            sanpham.Anh6 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh6);
+
+            return sanpham;
+        }
         public async Task AddProduct(SanphamDto model)
         {
             if (model == null)

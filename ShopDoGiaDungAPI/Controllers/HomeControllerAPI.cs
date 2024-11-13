@@ -42,7 +42,18 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             return await _productService.GetProductsByCategory(idCategory, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
         }
+        [HttpGet("ProductDetail/{productId}")]
+        public async Task<IActionResult> ProductDetail(int productId)
+        {
+            var sanpham = await _productService.GetProductDetailAsync(productId);
 
+            if (sanpham == null)
+            {
+                return NotFound(new { message = "Sản phẩm không tồn tại" });
+            }
+
+            return Ok(new { sanpham = sanpham });
+        }
         [HttpPost("ProductDetail")]
         public async Task<IActionResult> ProductDetail([FromBody] ProductDetailRequest request)
         {
@@ -53,6 +64,7 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return await _productService.GetProductDetail(request.Id);
         }
+
 
         [HttpGet("AllProduct")]
         public async Task<IActionResult> AllProduct(int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")

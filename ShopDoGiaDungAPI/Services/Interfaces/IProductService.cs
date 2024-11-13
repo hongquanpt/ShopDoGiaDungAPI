@@ -19,6 +19,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         Task<IActionResult> GetProductDetail(int productId);
         Task<IActionResult> GetAllProducts(int pageIndex, int pageSize, int maxPrice, int minPrice, string orderPrice);
         Task<(bool IsSuccess, string Message)> UpdateCartItemQuantityAsync(int productId, int quantity);
+        Task<SanPhamct> GetProductDetailAsync(int productId);
         Task<IActionResult> SearchProducts(
          string? search,
          string? idCategories,

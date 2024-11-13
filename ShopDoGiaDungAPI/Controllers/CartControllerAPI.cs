@@ -30,11 +30,12 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpPost("AddItem")]
         public JsonResult AddItem([FromBody] AddItemRequest request)
         {
-            if (request == null)
+            if (request == null || !ModelState.IsValid)
             {
                 return new JsonResult(new { status = false, message = "Invalid request data" });
             }
 
+            // Chỉ gọi tới _cartService với các thuộc tính cần thiết
             return _cartService.AddItemToCart(request.ProductId, HttpContext.Session, request.CheckOnly);
         }
 
