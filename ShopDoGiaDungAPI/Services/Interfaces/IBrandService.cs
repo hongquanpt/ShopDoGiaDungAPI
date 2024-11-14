@@ -8,5 +8,6 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         IActionResult AddBrand(string brandName);
         IActionResult UpdateBrand(int brandId, string brandName);
         IActionResult DeleteBrand(int brandId);
+        IActionResult GetBand(int bandId);
     }
 }

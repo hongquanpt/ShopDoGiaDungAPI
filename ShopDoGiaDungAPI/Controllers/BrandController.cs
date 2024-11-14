@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
@@ -31,9 +33,15 @@ namespace ShopDoGiaDungAPI.Controllers
         }
         [Authorize(Roles = "admin")]
         [HttpPut("hangs/{id}")]
-        public IActionResult SuaHang(int id, [FromBody] string name)
+        public IActionResult SuaH(int id, [FromBody] UpdateCategoryRequest request)
         {
-            return _brandService.UpdateBrand(id, name);
+            if (request == null || string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest(new { status = false, message = "The name field is required." });
+            }
+
+            var result = _brandService.UpdateBrand(id, request.Name);
+            return Ok(result);
         }
         [Authorize(Roles = "admin")]
 
@@ -41,6 +49,12 @@ namespace ShopDoGiaDungAPI.Controllers
         public IActionResult XoaHang(int id)
         {
             return _brandService.DeleteBrand(id);
+        }
+        [Authorize(Roles = "admin")]
+        [HttpGet("hangs/{id}")]
+        public IActionResult Hang(int id)
+        {
+            return _brandService.GetBand(id);
         }
     }
 }

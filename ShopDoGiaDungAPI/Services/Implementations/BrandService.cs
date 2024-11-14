@@ -84,5 +84,15 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 return new NotFoundObjectResult(new { status = false });
             }
         }
+        public IActionResult GetBand(int bandId)
+        {
+            var query = _context.Hangsanxuats.Find(bandId);
+            return new OkObjectResult(new
+            {
+
+                tendm = query.TenHang,
+                madm = bandId
+            });
+        }
     }
 }
