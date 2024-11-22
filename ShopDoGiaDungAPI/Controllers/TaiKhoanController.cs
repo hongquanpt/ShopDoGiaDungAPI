@@ -21,30 +21,10 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllTaiKhoans()
         {
-            var users = await _context.Taikhoans
-                .Include(tk => tk.TaiKhoanChucVus)
-                    .ThenInclude(tkcv => tkcv.MaChucVuNavigation)
-                .ToListAsync();
-
-            var userDtos = users.Select(user => new TaiKhoanDto
-            {
-                MaTaiKhoan = user.MaTaiKhoan,
-                Ten = user.Ten,
-                NgaySinh = user.NgaySinh,
-                Sdt = user.Sdt,
-                DiaChi = user.DiaChi,
-                Email = user.Email,
-                MaDonVi = user.MaDonVi,
-                ChucVus = user.TaiKhoanChucVus.Select(tkcv => new ChucVu2
-                {
-                    MaChucVu = tkcv.MaChucVu,
-                    TenChucVu = tkcv.MaChucVuNavigation.TenChucVu
-                }).ToList()
-            }).ToList();
-
-            return Ok(userDtos);
+            var taiKhoans = await _taiKhoanService.GetAllTaiKhoansAsync();
+            return Ok(taiKhoans);
         }
 
 
@@ -56,11 +36,51 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [HttpPost("{userId}/roles")]
-        public async Task<IActionResult> AssignRolesToUser(int userId, [FromBody] List<int> roleIds)
+        public async Task<IActionResult> AssignRolesToUser(int userId, [FromBody] RoleAssignmentDto dto)
         {
-            await _taiKhoanService.AssignRolesToUserAsync(userId, roleIds);
-            return Ok();
+            if (dto == null || dto.RoleIds == null || !dto.RoleIds.Any())
+            {
+                return BadRequest(new { message = "The roleIds field is required." });
+            }
+
+            var result = await _taiKhoanService.AssignRolesToUserAsync(userId, dto.RoleIds);
+            if (result)
+            {
+                return Ok(new { message = "Cập nhật chức vụ thành công." });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật chức vụ." });
+            }
         }
+        // GET: api/TaiKhoan/{userId}/permissions
+        [HttpGet("{userId}/permissions")]
+        public async Task<IActionResult> GetPermissionsByUser(int userId)
+        {
+            var permissions = await _taiKhoanService.GetPermissionsByUserAsync(userId);
+            return Ok(permissions);
+        }
+
+        // POST: api/TaiKhoan/{userId}/permissions
+        [HttpPost("{userId}/permissions")]
+        public async Task<IActionResult> AssignPermissionsToUser(int userId, [FromBody] PermissionAssignmentDto dto)
+        {
+            if (dto == null || dto.Permissions == null || !dto.Permissions.Any())
+            {
+                return BadRequest(new { message = "The permissions field is required." });
+            }
+
+            var result = await _taiKhoanService.AssignPermissionsToUserAsync(userId, dto.Permissions);
+            if (result)
+            {
+                return Ok(new { message = "Cập nhật quyền thành công." });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "Lỗi khi cập nhật quyền." });
+            }
+        }
+
     }
 
 }

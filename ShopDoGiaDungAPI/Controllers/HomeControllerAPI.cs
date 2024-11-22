@@ -90,7 +90,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("DonHang", "Xem")]
+        [Permission("Access", "Xem")]
         [HttpGet("MyOrder")]
         public async Task<IActionResult> MyOrder(string typeMenu = "tatca", int PageIndex = 1, int PageSize = 100)
         {
@@ -107,7 +107,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("ThongTin", "Xem")]
+        [Permission("Access", "Xem")]
         [HttpPost("ChangeProfile")]
         public async Task<IActionResult> ChangeProfile([FromBody] TaiKhoanDto tk)
         {
@@ -129,7 +129,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("DonHang", "Sua")]
+        [Permission("Access", "Xem")]
         [HttpPost("HuyDonHang")]
         public async Task<IActionResult> HuyDonHang(int ma)
         {
@@ -146,7 +146,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("DonHang", "Sua")]
+        [Permission("Access", "Xem")]
         [HttpPost("DaNhanHang")]
         public async Task<IActionResult> DaNhanHang(int ma)
         {

@@ -40,7 +40,7 @@ namespace ShopDoGiaDungAPI.Controllers
             return _accountService.DeleteAccount(matk);
         }
 
-        [Permission("ThongTin", "Xem")]
+        [Permission("Access", "Xem")]
         [HttpGet("accounts/{maTaiKhoan}")]
         public async Task<IActionResult> GetAccount(int maTaiKhoan)
         {

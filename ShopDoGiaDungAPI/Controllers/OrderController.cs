@@ -26,6 +26,7 @@ namespace ShopDoGiaDungAPI.Controllers
             return _orderService.GetOrders(tinhTrang, page, pageSize);
         }
 
+        [Permission("Access", "Xem")]
         [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/confirm/{madh}")]
         public IActionResult XacNhanDH(int madh)
@@ -40,14 +41,14 @@ namespace ShopDoGiaDungAPI.Controllers
             return _orderService.ShipOrder(madh);
         }
 
-        [Permission("QuanLyDonHang", "Sua")]
+        [Permission("Access", "Xem")]
         [HttpPost("orders/cancel/{madh}")]
         public IActionResult HuyDH(int madh)
         {
             return _orderService.CancelOrder(madh);
         }
 
-        [Permission("QuanLyDonHang", "Xem")]
+        [Permission("Access", "Xem")]
         [HttpGet("orders/{orderId}/details")]
         public async Task<IActionResult> GetOrderDetails(int orderId)
         {

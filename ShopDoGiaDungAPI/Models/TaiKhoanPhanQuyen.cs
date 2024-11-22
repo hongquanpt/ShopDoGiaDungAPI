@@ -5,13 +5,13 @@ namespace ShopDoGiaDungAPI.Models;
 
 public partial class TaiKhoanPhanQuyen
 {
-    public int MaTaiKhoan { get; set; }
+    public int? MaTaiKhoan { get; set; }
 
-    public int MaChucNang { get; set; }
+    public int? MaChucNang { get; set; }
 
-    public int MaHanhDong { get; set; }
+    public int? MaHanhDong { get; set; }
 
-    public int MaDonVi { get; set; }
+    public int? MaDonVi { get; set; }
 
     public virtual ChucNang MaChucNangNavigation { get; set; } = null!;
 

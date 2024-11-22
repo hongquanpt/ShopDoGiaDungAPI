@@ -55,6 +55,8 @@ builder.Services.AddAuthorization(options =>
         policy.Requirements.Add(new PermissionRequirement("Access", "Logout")));
     options.AddPolicy("Access.GetCurrentUser", policy =>
         policy.Requirements.Add(new PermissionRequirement("Access", "GetCurrentUser")));
+    options.AddPolicy("Access.Xem", policy =>
+       policy.Requirements.Add(new PermissionRequirement("Access", "Xem")));
 
     // Chức năng QuanLyTaiKhoan
     options.AddPolicy("QuanLyTaiKhoan.Xem", policy =>
