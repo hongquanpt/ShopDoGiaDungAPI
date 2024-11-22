@@ -35,22 +35,23 @@ namespace ShopDoGiaDungAPI.Controllers
             return Ok(roles);
         }
 
+        // POST: api/TaiKhoan/{userId}/roles
         [HttpPost("{userId}/roles")]
         public async Task<IActionResult> AssignRolesToUser(int userId, [FromBody] RoleAssignmentDto dto)
         {
-            if (dto == null || dto.RoleIds == null || !dto.RoleIds.Any())
+            if (dto == null || dto.RoleIds == null || dto.RoleIds.Count == 0)
             {
-                return BadRequest(new { message = "The roleIds field is required." });
+                return BadRequest(new { message = "The roleIds field is required and cannot be empty." });
             }
 
             var result = await _taiKhoanService.AssignRolesToUserAsync(userId, dto.RoleIds);
             if (result)
             {
-                return Ok(new { message = "Cập nhật chức vụ thành công." });
+                return Ok(new { message = "Cập nhật chức vụ cho tài khoản thành công." });
             }
             else
             {
-                return StatusCode(500, new { message = "Lỗi khi cập nhật chức vụ." });
+                return StatusCode(500, new { message = "Lỗi khi cập nhật chức vụ cho tài khoản." });
             }
         }
         // GET: api/TaiKhoan/{userId}/permissions

@@ -55,62 +55,58 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             {
                 try
                 {
-                    // Xóa tất cả các chức vụ hiện có của người dùng
-                    var existingRoles = _context.TaiKhoanChucVus.Where(tkcv => tkcv.MaTaiKhoan == userId);
-                    _context.TaiKhoanChucVus.RemoveRange(existingRoles);
+                    var user = await _context.Taikhoans
+                        .Include(u => u.TaiKhoanChucVus)
+                        .FirstOrDefaultAsync(u => u.MaTaiKhoan == userId);
 
-                    // Thêm các chức vụ mới
-                    var newRoles = roleIds.Select(roleId => new Models.TaiKhoanChucVu
+                    if (user == null)
                     {
-                        MaTaiKhoan = userId,
-                        MaChucVu = roleId
-                    }).ToList();
+                        return false; // User not found
+                    }
 
-                    _context.TaiKhoanChucVus.AddRange(newRoles);
-                    await _context.SaveChangesAsync();
+                    // Lấy danh sách các role hiện tại của user
+                    var existingRoleIds = user.TaiKhoanChucVus.Select(tc => tc.MaChucVu).ToList();
 
-                    // Cập nhật quyền cho người dùng dựa trên các chức vụ mới
-                    // Đầu tiên, xóa tất cả các quyền hiện có
-                    var existingPermissions = _context.TaiKhoanPhanQuyens.Where(tpq => tpq.MaTaiKhoan == userId);
-                    _context.TaiKhoanPhanQuyens.RemoveRange(existingPermissions);
+                    // Xác định roles cần thêm và roles cần xóa
+                    var rolesToAdd = roleIds.Except(existingRoleIds).ToList();
+                    var rolesToRemove = existingRoleIds.Except(roleIds).ToList();
 
-                    // Lấy tất cả các quyền từ các chức vụ mới
-                    var permissionsFromRoles = await _context.PhanQuyens
-                        .Where(pq => roleIds.Contains(pq.MaChucVu))
-                        .ToListAsync();
-
-                    // Loại bỏ các quyền trùng lặp
-                    var uniquePermissions = permissionsFromRoles
-                        .GroupBy(pq => new { pq.MaChucNang, pq.MaHanhDong, pq.MaDonVi })
-                        .Select(g => g.First())
-                        .ToList();
-
-                    // Thêm các quyền mới
-                    var newPermissions = uniquePermissions.Select(pq => new TaiKhoanPhanQuyen
+                    // Thêm các roles mới
+                    foreach (var roleId in rolesToAdd)
                     {
-                        MaTaiKhoan = userId,
-                        MaChucNang = pq.MaChucNang,
-                        MaHanhDong = pq.MaHanhDong,
-                        MaDonVi = pq.MaDonVi
-                    }).ToList();
+                        var chucVu = await _context.ChucVu2s.FindAsync(roleId);
+                        if (chucVu != null)
+                        {
+                            user.TaiKhoanChucVus.Add(new Models.TaiKhoanChucVu
+                            {
+                                MaTaiKhoan = userId,
+                                MaChucVu = roleId
+                            });
+                        }
+                    }
 
-                    _context.TaiKhoanPhanQuyens.AddRange(newPermissions);
+                    // Xóa các roles đã bị loại bỏ
+                    foreach (var roleId in rolesToRemove)
+                    {
+                        var taiKhoanChucVu = user.TaiKhoanChucVus.FirstOrDefault(tc => tc.MaChucVu == roleId);
+                        if (taiKhoanChucVu != null)
+                        {
+                            _context.TaiKhoanChucVus.Remove(taiKhoanChucVu);
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
-
-                    // Commit transaction
                     await transaction.CommitAsync();
                     return true;
                 }
-                catch (Exception ex)
+                catch
                 {
-                    // Rollback transaction nếu có lỗi
                     await transaction.RollbackAsync();
-                    // Log lỗi nếu cần
+                    // Log lỗi nếu cần thiết
                     return false;
                 }
             }
         }
-
         public async Task<List<PhanQuyen>> GetUserPermissionsAsync(int userId)
         {
             // Lấy quyền từ chức vụ của người dùng
