@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-    //[Authorize(Roles = "admin")]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     [EnableCors("MyAllowedOrigins")]
@@ -17,31 +18,36 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             _orderService = orderService;
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLyDonHang", "Xem")]
         [HttpGet("orders")]
         public IActionResult QuanLyDH(int tinhTrang = 10, int page = 1, int pageSize = 100)
         {
             return _orderService.GetOrders(tinhTrang, page, pageSize);
         }
 
+        [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/confirm/{madh}")]
         public IActionResult XacNhanDH(int madh)
         {
             return _orderService.ConfirmOrder(madh);
         }
 
+        [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/ship/{madh}")]
         public IActionResult VanChuyenDH(int madh)
         {
             return _orderService.ShipOrder(madh);
         }
 
+        [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/cancel/{madh}")]
         public IActionResult HuyDH(int madh)
         {
             return _orderService.CancelOrder(madh);
         }
 
+        [Permission("QuanLyDonHang", "Xem")]
         [HttpGet("orders/{orderId}/details")]
         public async Task<IActionResult> GetOrderDetails(int orderId)
         {
@@ -54,7 +60,8 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return Ok(orderDetails);
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLyDonHang", "Xem")]
         [HttpGet("pending")]
         public async Task<IActionResult> GetPendingOrders()
         {

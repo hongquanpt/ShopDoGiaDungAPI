@@ -1,14 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Security.Claims;
 
-
 namespace ShopDoGiaDungAPI.Controllers
 {
-    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     [EnableCors("MyAllowedOrigins")]
@@ -25,63 +24,17 @@ namespace ShopDoGiaDungAPI.Controllers
             _userService = userService;
         }
 
-        [HttpGet("Index")]
-        public async Task<IActionResult> Index()
-        {
-            return await _productService.GetTopSellingProducts();
-        }
-
-        [HttpGet("SPHang")]
-        public async Task<IActionResult> SPHang(int idHang, string ten, int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
-        {
-            return await _productService.GetProductsByBrand(idHang, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
-        }
-
-        [HttpGet("SPDanhMuc")]
-        public async Task<IActionResult> SPDanhMuc(int idCategory, string ten, int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
-        {
-            return await _productService.GetProductsByCategory(idCategory, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
-        }
-        [HttpGet("ProductDetail/{productId}")]
-        public async Task<IActionResult> ProductDetail(int productId)
-        {
-            var sanpham = await _productService.GetProductDetailAsync(productId);
-
-            if (sanpham == null)
-            {
-                return NotFound(new { message = "Sản phẩm không tồn tại" });
-            }
-
-            return Ok(new { sanpham = sanpham });
-        }
-        [HttpPost("ProductDetail")]
-        public async Task<IActionResult> ProductDetail([FromBody] ProductDetailRequest request)
-        {
-            if (request == null || request.Id <= 0)
-            {
-                return BadRequest(new { status = false, message = "Invalid request data" });
-            }
-
-            return await _productService.GetProductDetail(request.Id);
-        }
-
-
-        [HttpGet("AllProduct")]
-        public async Task<IActionResult> AllProduct(int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
-        {
-            return await _productService.GetAllProducts(PageIndex, PageSize, maxPrice, minPrice, orderPrice);
-        }
-
+        [AllowAnonymous]
         [HttpGet("Search")]
         public async Task<IActionResult> Search(
-          string? search,
-          string? idCategories,
-          string? idHangs,
-          int pageIndex = 1,
-          int pageSize = 100,
-          string maxPrice = "100000000",
-          string minPrice = "0",
-          string orderPrice = "tang")
+        string? search,
+        string? idCategories,
+        string? idHangs,
+        int pageIndex = 1,
+        int pageSize = 100,
+        string maxPrice = "100000000",
+        string minPrice = "0",
+        string orderPrice = "tang")
         {
             return await _productService.SearchProducts(
                 search,
@@ -94,23 +47,67 @@ namespace ShopDoGiaDungAPI.Controllers
                 orderPrice);
         }
 
+        [AllowAnonymous]
+        [HttpGet("Index")]
+        public async Task<IActionResult> Index()
+        {
+            return await _productService.GetTopSellingProducts();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("AllProduct")]
+        public async Task<IActionResult> AllProduct(int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
+        {
+            return await _productService.GetAllProducts(PageIndex, PageSize, maxPrice, minPrice, orderPrice);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("SPHang")]
+        public async Task<IActionResult> SPHang(int idHang, string ten, int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
+        {
+            return await _productService.GetProductsByBrand(idHang, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("SPDanhMuc")]
+        public async Task<IActionResult> SPDanhMuc(int idCategory, string ten, int PageIndex = 1, int PageSize = 100, int maxPrice = 0, int minPrice = 0, string orderPrice = "tang")
+        {
+            return await _productService.GetProductsByCategory(idCategory, ten, PageIndex, PageSize, maxPrice, minPrice, orderPrice);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("ProductDetail/{productId}")]
+        public async Task<IActionResult> ProductDetail(int productId)
+        {
+            var sanpham = await _productService.GetProductDetailAsync(productId);
+
+            if (sanpham == null)
+            {
+                return NotFound(new { message = "Sản phẩm không tồn tại" });
+            }
+
+            return Ok(new { sanpham = sanpham });
+        }
+
+        [Authorize]
+        [Permission("DonHang", "Xem")]
         [HttpGet("MyOrder")]
         public async Task<IActionResult> MyOrder(string typeMenu = "tatca", int PageIndex = 1, int PageSize = 100)
         {
-            // Lấy userId từ Claims
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
             {
                 return Unauthorized();
             }
-            
-            string userId = userIdClaim.Value.ToString();
-           
+
+            int userId = int.Parse(userIdClaim.Value);
 
             return await _orderService.GetUserOrders(userId, typeMenu, PageIndex, PageSize);
         }
 
+        [Authorize]
+        [Permission("ThongTin", "Xem")]
         [HttpPost("ChangeProfile")]
         public async Task<IActionResult> ChangeProfile([FromBody] TaiKhoanDto tk)
         {
@@ -131,30 +128,38 @@ namespace ShopDoGiaDungAPI.Controllers
             return result;
         }
 
-
-
+        [Authorize]
+        [Permission("DonHang", "Sua")]
         [HttpPost("HuyDonHang")]
         public async Task<IActionResult> HuyDonHang(int ma)
         {
-            var userId = HttpContext.Session.GetInt32("Ma");
-            if (userId == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
             {
                 return Unauthorized();
             }
 
-            return await _orderService.CancelUserOrder(ma, userId.Value);
+            int userId = int.Parse(userIdClaim.Value);
+
+            return await _orderService.CancelUserOrder(ma, userId);
         }
 
+        [Authorize]
+        [Permission("DonHang", "Sua")]
         [HttpPost("DaNhanHang")]
         public async Task<IActionResult> DaNhanHang(int ma)
         {
-            var userId = HttpContext.Session.GetInt32("Ma");
-            if (userId == null)
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
             {
                 return Unauthorized();
             }
 
-            return await _orderService.ConfirmOrderReceived(ma, userId.Value);
+            int userId = int.Parse(userIdClaim.Value);
+
+            return await _orderService.ConfirmOrderReceived(ma, userId);
         }
     }
 }

@@ -175,11 +175,10 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         }
 
         // Phương thức thanh toán
-        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, string? user = null)
+        public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? user = null)
         {
-            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user)?.MaTaiKhoan ?? 0;
-            try
-            {
+            int userId = _context.Taikhoans.FirstOrDefault(s => s.MaTaiKhoan == user)?.MaTaiKhoan ?? 0;
+           
                 // Kiểm tra thông tin thanh toán đầy đủ
                 if (string.IsNullOrEmpty(thanhToan.ten) || string.IsNullOrEmpty(thanhToan.sdt) || string.IsNullOrEmpty(thanhToan.diaChi))
                 {
@@ -245,11 +244,8 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         // Trả về kết quả thành công
         return new JsonResult(new { status = true });
     }
-    catch (Exception)
-    {
-        return new JsonResult(new { status = false, message = "Lỗi khi xử lý thanh toán" });
-    }
+  
 }
 
-    }
+    
 }

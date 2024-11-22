@@ -173,9 +173,9 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
 
         // Home functions
-        public async Task<IActionResult> GetUserOrders(string user, string typeMenu, int pageIndex, int pageSize)
+        public async Task<IActionResult> GetUserOrders(int user, string typeMenu, int pageIndex, int pageSize)
         {
-            int userId = _context.Taikhoans.FirstOrDefault(s => s.Email == user)?.MaTaiKhoan ?? 0;
+            int userId = _context.Taikhoans.FirstOrDefault(s => s.MaTaiKhoan == user)?.MaTaiKhoan ?? 0;
 
             
 

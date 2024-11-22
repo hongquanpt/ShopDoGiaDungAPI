@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
@@ -18,6 +19,7 @@ namespace ShopDoGiaDungAPI.Controllers
             _statisticsService = statisticsService;
         }
 
+        [Permission("ThongKe", "Xem")]
         [HttpPost("statistics")]
         public IActionResult GetSalesStatistics([FromBody] int year)
         {

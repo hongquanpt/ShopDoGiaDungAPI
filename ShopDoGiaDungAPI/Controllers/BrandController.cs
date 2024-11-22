@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
-using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-    
     [Route("api/[controller]")]
     [ApiController]
     [EnableCors("MyAllowedOrigins")]
@@ -19,19 +18,24 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             _brandService = brandService;
         }
+
         [AllowAnonymous]
         [HttpGet("hangs")]
         public IActionResult QuanLyHang(string tenhang = "", int mahang = 0, int page = 1, int pageSize = 10)
         {
             return _brandService.GetBrands(tenhang, mahang, page, pageSize);
         }
-        [Authorize(Roles = "admin")]
+
+        [Authorize]
+        [Permission("QuanLyHang", "Them")]
         [HttpPost("hangs")]
         public IActionResult ThemHang([FromBody] string tenhang)
         {
             return _brandService.AddBrand(tenhang);
         }
-        [Authorize(Roles = "admin")]
+
+        [Authorize]
+        [Permission("QuanLyHang", "Sua")]
         [HttpPut("hangs/{id}")]
         public IActionResult SuaH(int id, [FromBody] UpdateCategoryRequest request)
         {
@@ -43,14 +47,17 @@ namespace ShopDoGiaDungAPI.Controllers
             var result = _brandService.UpdateBrand(id, request.Name);
             return Ok(result);
         }
-        [Authorize(Roles = "admin")]
 
+        [Authorize]
+        [Permission("QuanLyHang", "Xoa")]
         [HttpDelete("hangs/{id}")]
         public IActionResult XoaHang(int id)
         {
             return _brandService.DeleteBrand(id);
         }
-        [Authorize(Roles = "admin")]
+
+        [Authorize]
+        [Permission("QuanLyHang", "Xem")]
         [HttpGet("hangs/{id}")]
         public IActionResult Hang(int id)
         {

@@ -1,4 +1,6 @@
-﻿namespace ShopDoGiaDungAPI.DTO
+﻿using ShopDoGiaDungAPI.Models;
+
+namespace ShopDoGiaDungAPI.DTO
 {
     public class TaiKhoanDto
     {
@@ -12,5 +14,7 @@
         public string? DiaChi { get; set; }
 
         public string? Email { get; set; }
+        public int? MaDonVi { get; set; }
+        public List<ChucVu2> ChucVus { get; set; }
     }
 }

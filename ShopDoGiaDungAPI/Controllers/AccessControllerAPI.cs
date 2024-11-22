@@ -4,35 +4,46 @@ using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Security.Claims;
+using ShopDoGiaDungAPI.Attributes;
+using ShopDoGiaDungAPI.Services.Implementations;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-
     [Route("api/[controller]")]
     [EnableCors("MyAllowedOrigins")]
     [ApiController]
     public class AccessControllerAPI : ControllerBase
     {
+        private readonly ILogger<AccessControllerAPI> _logger;
         private readonly IAuthService _authService;
+        private readonly IPermissionService _permissionService;
 
-        public AccessControllerAPI(IAuthService authService)
+        public AccessControllerAPI(IAuthService authService, IPermissionService permissionService)
         {
             _authService = authService;
+            _permissionService= permissionService;
         }
 
         [AllowAnonymous]
-       
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginInfo loginInfo)
         {
-            if (loginInfo == null || string.IsNullOrEmpty(loginInfo.Email) || string.IsNullOrEmpty(loginInfo.Password))
+            var authResult = await _authService.LoginAsync(loginInfo);
+
+            if (authResult.Token == null)
             {
-                return BadRequest(new { status = false, message = "Thông tin đăng nhập không hợp lệ." });
+                // Đăng nhập không thành công
+                return BadRequest(new { message = authResult.Message });
             }
 
-            return await _authService.Login(loginInfo);
+            // Đăng nhập thành công
+            return Ok(new
+            {
+                message = authResult.Message,
+                token = authResult.Token,
+                user = authResult.User
+            });
         }
-
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -40,41 +51,75 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             return await _authService.Register(registerInfo);
         }
+        [Authorize]
+        [HttpGet("GetUserPermissions")]
+        public async Task<IActionResult> GetUserPermissions()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized(new { message = "User is not authenticated." });
+            }
 
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return BadRequest(new { message = "Invalid user ID format." });
+            }
+
+            try
+            {
+                var permissions = await _permissionService.GetUserPermissions(userId);
+                return Ok(permissions);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (NullReferenceException ex)
+            {
+                return StatusCode(500, new { message = "An unexpected error occurred.", detail = ex.Message, stackTrace = ex.StackTrace });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your request.", detail = ex.Message, stackTrace = ex.StackTrace });
+            }
+        }
+
+        [Authorize]
+        [Permission("Access", "Logout")]
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            // Nếu bạn đang sử dụng JWT, bạn có thể không cần method này hoặc chỉ cần thông báo cho client xóa JWT token
+            // Thông báo cho client xóa JWT token
             return Ok(new { message = "Đăng xuất thành công" });
         }
 
-        // Thêm phương thức GetCurrentUser
         [Authorize]
+        [Permission("Access", "GetCurrentUser")]
         [HttpGet("GetCurrentUser")]
-        public IActionResult GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser()
         {
-            // Lấy thông tin từ JWT token
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return Unauthorized();
+            }
 
-            // Hoặc lấy thông tin chi tiết từ cơ sở dữ liệu
-            var user = _authService.GetUserById(userId);
+            var userId = userIdClaim.Value.ToString();
+            var user =  _authService.GetUserById(userId);
 
             if (user == null)
             {
                 return NotFound();
             }
 
-            // Trả về thông tin người dùng
             return Ok(new
             {
                 userId = user.Id,
                 email = user.Email,
                 fullName = user.FullName,
-                roles = user.Roles // Trả về danh sách vai trò hoặc nối thành chuỗi nếu cần
-                                   // Thêm các thuộc tính khác nếu cần
+                roles = user.Roles
             });
         }
-
     }
 }

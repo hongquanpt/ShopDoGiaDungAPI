@@ -1,15 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
-using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-    [AllowAnonymous]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     [EnableCors("MyAllowedOrigins")]
@@ -23,13 +22,15 @@ namespace ShopDoGiaDungAPI.Controllers
             _productService = productService;
             _minioService = minioService;
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLySanPham", "Xem")]
         [HttpGet("QuanLySP")]
         public async Task<IActionResult> QuanLySP(int page = 1, int pageSize = 10000)
         {
             return await _productService.GetProducts(page, pageSize);
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLySanPham", "Them")]
         [HttpPost("ThemSP")]
         public async Task<IActionResult> ThemSP([FromForm] SanphamDto model)
         {
@@ -47,19 +48,21 @@ namespace ShopDoGiaDungAPI.Controllers
                 return BadRequest(new { status = false, message = ex.Message });
             }
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLySanPham", "Xoa")]
         [HttpDelete("XoaSP/{maSP}")]
         public async Task<IActionResult> XoaSP(int maSP)
         {
             return await _productService.DeleteProduct(maSP);
         }
-        [Authorize(Roles = "admin")]
+
+        [Permission("QuanLySanPham", "Sua")]
         [HttpPut("SuaSP")]
         public async Task<IActionResult> SuaSP([FromForm] Sanpham spmoi, [FromForm] IFormFile[] images, [FromForm] string DanhMuc, [FromForm] string Hang)
         {
             return await _productService.UpdateProduct(spmoi, images, DanhMuc, Hang);
         }
-        // POST: api/CartControllerAPI/UpdateCartItemQuantity
+        [AllowAnonymous]
         [HttpPost("UpdateCartItemQuantity")]
         public async Task<IActionResult> UpdateCartItemQuantity([FromQuery] int productId, [FromQuery] int quantity)
         {
@@ -71,7 +74,6 @@ namespace ShopDoGiaDungAPI.Controllers
             }
             else
             {
-                // Sử dụng HTTP 400 Bad Request cho các lỗi liên quan đến yêu cầu
                 return BadRequest(new { status = false, message });
             }
         }

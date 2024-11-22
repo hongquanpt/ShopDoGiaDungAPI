@@ -15,7 +15,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         Task<List<MyOrderDetail>> GetOrderDetails(int orderId);
 
         // Home functions
-        Task<IActionResult> GetUserOrders(string userId, string typeMenu, int pageIndex, int pageSize);
+        Task<IActionResult> GetUserOrders(int userId, string typeMenu, int pageIndex, int pageSize);
         Task<IActionResult> CancelUserOrder(int orderId, int userId);
         Task<IActionResult> ConfirmOrderReceived(int orderId, int userId);
     }

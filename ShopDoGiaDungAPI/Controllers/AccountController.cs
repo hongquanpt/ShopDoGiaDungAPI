@@ -1,48 +1,49 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ShopDoGiaDungAPI.Services.Implementations;
+using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.Services.Interfaces;
-using System;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
-
-    [Authorize(Roles = "admin")]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
         private readonly IRoleService _roleService;
+
         public AccountController(IAccountService accountService, IRoleService roleService)
         {
             _accountService = accountService;
-            _roleService = roleService; 
+            _roleService = roleService;
         }
 
+        [Permission("QuanLyTaiKhoan", "Xem")]
         [HttpGet("accounts")]
-        public IActionResult QuanLyTK( int page = 1, int pageSize = 10)
+        public IActionResult QuanLyTK(int page = 1, int pageSize = 10)
         {
-            return _accountService.GetAccounts( page, pageSize);
+            return _accountService.GetAccounts(page, pageSize);
         }
 
+        [Permission("QuanLyTaiKhoan", "Sua")]
         [HttpPut("accounts/{matk}/role")]
         public IActionResult SuaCV(int matk, [FromBody] int macv)
         {
             return _accountService.UpdateAccountRole(matk, macv);
         }
 
+        [Permission("QuanLyTaiKhoan", "Xoa")]
         [HttpDelete("accounts/{matk}")]
         public IActionResult XoaTK(int matk)
         {
             return _accountService.DeleteAccount(matk);
         }
+
+        [Permission("ThongTin", "Xem")]
         [HttpGet("accounts/{maTaiKhoan}")]
-        [Authorize] // Yêu cầu đăng nhập
         public async Task<IActionResult> GetAccount(int maTaiKhoan)
         {
-            // Lấy thông tin tài khoản từ cơ sở dữ liệu
             var account = await _accountService.GetAccountByIdAsync(maTaiKhoan);
 
             if (account == null)
@@ -52,7 +53,8 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return Ok(account);
         }
-        // GET: api/User/{userId}/roles
+
+        [Permission("QuanLyTaiKhoan", "Xem")]
         [HttpGet("{userId}/roles")]
         public async Task<IActionResult> GetUserRoles(int userId)
         {
@@ -64,7 +66,7 @@ namespace ShopDoGiaDungAPI.Controllers
             return Ok(roles);
         }
 
-        // POST: api/User/{userId}/roles/{roleId}
+        [Permission("QuanLyTaiKhoan", "Them")]
         [HttpPost("{userId}/roles/{roleId}")]
         public async Task<IActionResult> AssignRoleToUser(int userId, int roleId)
         {
@@ -79,7 +81,7 @@ namespace ShopDoGiaDungAPI.Controllers
             }
         }
 
-        // DELETE: api/User/{userId}/roles/{roleId}
+        [Permission("QuanLyTaiKhoan", "Xoa")]
         [HttpDelete("{userId}/roles/{roleId}")]
         public async Task<IActionResult> RemoveRoleFromUser(int userId, int roleId)
         {
