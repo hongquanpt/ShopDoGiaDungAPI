@@ -31,8 +31,13 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpPost("danhmucs")]
         public IActionResult ThemDM([FromBody] string tendm)
         {
+            if (string.IsNullOrWhiteSpace(tendm))
+            {
+                return BadRequest("Tên danh mục không được để trống.");
+            }
             return _categoryService.AddCategory(tendm);
         }
+
 
         [Authorize]
         [Permission("QuanLyDanhMuc", "Sua")]

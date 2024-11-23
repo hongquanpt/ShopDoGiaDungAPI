@@ -51,10 +51,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     // Chức năng Access
-    options.AddPolicy("Access.Logout", policy =>
-        policy.Requirements.Add(new PermissionRequirement("Access", "Logout")));
-    options.AddPolicy("Access.GetCurrentUser", policy =>
-        policy.Requirements.Add(new PermissionRequirement("Access", "GetCurrentUser")));
     options.AddPolicy("Access.Xem", policy =>
        policy.Requirements.Add(new PermissionRequirement("Access", "Xem")));
 
@@ -87,8 +83,7 @@ builder.Services.AddAuthorization(options =>
         policy.Requirements.Add(new PermissionRequirement("GioHang", "Xoa")));
     options.AddPolicy("GioHang.Sua", policy =>
         policy.Requirements.Add(new PermissionRequirement("GioHang", "Sua")));
-    options.AddPolicy("GioHang.ThanhToan", policy =>
-        policy.Requirements.Add(new PermissionRequirement("GioHang", "ThanhToan")));
+    
 
     // Chức năng QuanLyDanhMuc
     options.AddPolicy("QuanLyDanhMuc.Them", policy =>
@@ -127,9 +122,7 @@ builder.Services.AddAuthorization(options =>
     // Chức năng ThongKe
     options.AddPolicy("ThongKe.Xem", policy =>
         policy.Requirements.Add(new PermissionRequirement("ThongKe", "Xem")));
-    // Chức năng ThongTin
-    options.AddPolicy("ThongTin.Xem", policy =>
-       policy.Requirements.Add(new PermissionRequirement("ThongTin", "Xem")));
+    
 });
 
 // Đăng ký PermissionHandler và PermissionService

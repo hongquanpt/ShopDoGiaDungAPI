@@ -86,7 +86,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("Access", "Logout")]
+        [Permission("Access", "Xem")]
         [HttpPost("logout")]
         public IActionResult Logout()
         {
@@ -95,7 +95,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [Authorize]
-        [Permission("Access", "GetCurrentUser")]
+        [Permission("Access", "Xem")]
         [HttpGet("GetCurrentUser")]
         public async Task<IActionResult> GetCurrentUser()
         {
