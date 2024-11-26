@@ -50,9 +50,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Đăng ký Authorization Policies dựa trên chức năng và hành động
 builder.Services.AddAuthorization(options =>
 {
-    // Chức năng Access
-    options.AddPolicy("Access.Xem", policy =>
-       policy.Requirements.Add(new PermissionRequirement("Access", "Xem")));
+   
 
     // Chức năng QuanLyTaiKhoan
     options.AddPolicy("QuanLyTaiKhoan.Xem", policy =>
@@ -122,7 +120,14 @@ builder.Services.AddAuthorization(options =>
     // Chức năng ThongKe
     options.AddPolicy("ThongKe.Xem", policy =>
         policy.Requirements.Add(new PermissionRequirement("ThongKe", "Xem")));
-    
+    // Chức năng Access
+    options.AddPolicy("Access.Xem", policy =>
+       policy.Requirements.Add(new PermissionRequirement("Access", "Xem")));
+    options.AddPolicy("Access.Sua", policy =>
+       policy.Requirements.Add(new PermissionRequirement("Access", "Sua")));
+    options.AddPolicy("Access.Xoa", policy =>
+       policy.Requirements.Add(new PermissionRequirement("Access", "Xoa")));
+
 });
 
 // Đăng ký PermissionHandler và PermissionService
