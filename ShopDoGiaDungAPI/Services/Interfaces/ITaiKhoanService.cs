@@ -11,6 +11,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         Task<List<PhanQuyen>> GetUserPermissionsAsync(int userId);
         Task<bool> AssignPermissionsToUserAsync(int userId, List<PhanQuyenDto> permissions);
         Task<List<PhanQuyenDto>> GetPermissionsByUserAsync(int userId);
+        Task<bool> DeleteAccountAsync(int maTaiKhoan);
     }
 
 }

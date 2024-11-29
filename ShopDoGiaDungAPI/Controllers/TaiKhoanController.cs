@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
+using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Controllers
@@ -26,7 +27,25 @@ namespace ShopDoGiaDungAPI.Controllers
             var taiKhoans = await _taiKhoanService.GetAllTaiKhoansAsync();
             return Ok(taiKhoans);
         }
-
+        // API để xóa tài khoản
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteAccount(int id)
+        {
+            try
+            {
+                var result = await _taiKhoanService.DeleteAccountAsync(id);
+                if (result)
+                {
+                    return Ok(new { message = "Tài khoản đã được xóa thành công." });
+                }
+                return NotFound(new { message = "Tài khoản không tồn tại." });
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần thiết
+                return StatusCode(500, new { message = "Đã có lỗi xảy ra khi xóa tài khoản." });
+            }
+        }
 
         [HttpGet("{userId}/roles")]
         public async Task<IActionResult> GetRolesByUser(int userId)

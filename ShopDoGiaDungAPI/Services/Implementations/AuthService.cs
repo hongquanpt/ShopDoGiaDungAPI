@@ -353,6 +353,63 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             }
         }
 
+        // Tạo tài khoản và gán quyền
+        public async Task<IActionResult> CreateUserAsync(CreateUserRequest request)
+        {
+            try
+            {
+                // Kiểm tra nếu email đã tồn tại
+                var existingUser = await _context.Taikhoans.SingleOrDefaultAsync(c => c.Email == request.Email);
+                if (existingUser != null)
+                {
+                    return new BadRequestObjectResult(new { message = "Tài khoản với email này đã tồn tại" });
+                }
+
+                // Tạo tài khoản mới
+                var newUser = new Taikhoan
+                {
+                    Ten = request.Ten,
+                    Email = request.Email,
+                    DiaChi = request.DiaChi,
+                    Sdt = request.Sdt,
+                    NgaySinh = request.NgaySinh.HasValue ? DateOnly.FromDateTime(request.NgaySinh.Value) : (DateOnly?)null
+                };
+
+                // Mã hóa mật khẩu và lưu vào cơ sở dữ liệu
+                newUser.MatKhau = _passwordHasher.HashPassword(newUser, request.Password);
+
+                // Thêm tài khoản vào cơ sở dữ liệu
+                _context.Taikhoans.Add(newUser);
+                await _context.SaveChangesAsync(); // Lưu tài khoản mới
+
+                // Gán quyền (chức vụ) cho tài khoản
+                foreach (var chucVuId in request.ChucVuIds)
+                {
+                    var chucVu = await _context.ChucVus.FindAsync(chucVuId); // Kiểm tra nếu chức vụ có tồn tại
+                    if (chucVu != null)
+                    {
+                        var taiKhoanChucVu = new TaiKhoanChucVu
+                        {
+                            MaTaiKhoan = newUser.MaTaiKhoan,
+                            MaChucVu = chucVuId,
+                            Ten = chucVu.Ten // Gán tên chức vụ cho tài khoản
+                        };
+
+                        _context.TaiKhoanChucVus.Add(taiKhoanChucVu);
+                    }
+                }
+
+                // Lưu các thay đổi về chức vụ vào cơ sở dữ liệu
+                await _context.SaveChangesAsync();
+
+                return new OkObjectResult(new { message = "Tạo tài khoản và gán quyền thành công" });
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần
+                return new StatusCodeResult(500);
+            }
+        }
         public UserDto GetUserById(string userId)
         {
             int id = int.Parse(userId);

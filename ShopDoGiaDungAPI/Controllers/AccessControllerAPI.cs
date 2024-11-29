@@ -51,6 +51,12 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             return await _authService.Register(registerInfo);
         }
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+        {
+            var result = await _authService.CreateUserAsync(request);
+            return result;
+        }
         [Authorize]
         [HttpGet("GetUserPermissions")]
         public async Task<IActionResult> GetUserPermissions()

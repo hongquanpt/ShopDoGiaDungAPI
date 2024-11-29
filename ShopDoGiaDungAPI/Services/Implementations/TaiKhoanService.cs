@@ -14,7 +14,36 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         {
             _context = context;
         }
+        // Xóa tài khoản cùng với các liên kết
+        public async Task<bool> DeleteAccountAsync(int maTaiKhoan)
+        {
+            var account = await _context.Taikhoans
+                .Include(a => a.Donhangs)
+                .Include(a => a.GioHangs)
+                .Include(a => a.TaiKhoanChucVus)
+                .Include(a => a.TaiKhoanPhanQuyens)
+                .Include(a => a.UserRoles)
+                .FirstOrDefaultAsync(a => a.MaTaiKhoan == maTaiKhoan);
 
+            if (account == null)
+            {
+                return false; // Tài khoản không tồn tại
+            }
+
+            // Xóa các liên kết trước khi xóa tài khoản chính
+            _context.TaiKhoanChucVus.RemoveRange(account.TaiKhoanChucVus);
+            _context.TaiKhoanPhanQuyens.RemoveRange(account.TaiKhoanPhanQuyens);
+            _context.UserRoles.RemoveRange(account.UserRoles);
+            _context.GioHangs.RemoveRange(account.GioHangs);
+            _context.Donhangs.RemoveRange(account.Donhangs);
+
+            // Xóa tài khoản
+            _context.Taikhoans.Remove(account);
+
+            await _context.SaveChangesAsync(); // Lưu thay đổi vào cơ sở dữ liệu
+
+            return true; // Xóa thành công
+        }
         public async Task<List<ChucVu2>> GetRolesByUserAsync(int userId)
         {
             var roles = await EntityFrameworkQueryableExtensions.ToListAsync(_context.TaiKhoanChucVus

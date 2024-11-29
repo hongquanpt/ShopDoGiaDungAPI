@@ -9,6 +9,7 @@ namespace ShopDoGiaDungAPI.Services.Interfaces
         Task<AuthResult> LoginAsync(LoginInfo loginInfo);
         Task<IActionResult> Register(RegisterInfo registerInfo);
         UserDto GetUserById(string userId);
+        Task<IActionResult> CreateUserAsync(CreateUserRequest request);
         //Task<List<PermissionDto>> GetPermissionsByUserId(int userId);
     }
 }

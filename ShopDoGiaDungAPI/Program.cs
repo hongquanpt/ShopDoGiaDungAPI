@@ -72,15 +72,15 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("QuanLyHang.Xem", policy =>
         policy.Requirements.Add(new PermissionRequirement("QuanLyHang", "Xem")));
 
-    // Chức năng GioHang
-    options.AddPolicy("GioHang.Xem", policy =>
-        policy.Requirements.Add(new PermissionRequirement("GioHang", "Xem")));
-    options.AddPolicy("GioHang.Them", policy =>
-        policy.Requirements.Add(new PermissionRequirement("GioHang", "Them")));
-    options.AddPolicy("GioHang.Xoa", policy =>
-        policy.Requirements.Add(new PermissionRequirement("GioHang", "Xoa")));
-    options.AddPolicy("GioHang.Sua", policy =>
-        policy.Requirements.Add(new PermissionRequirement("GioHang", "Sua")));
+    // Chức năng QuanLyChucVu
+    options.AddPolicy("QuanLyChucVu.Xem", policy =>
+        policy.Requirements.Add(new PermissionRequirement("QuanLyChucVu", "Xem")));
+    options.AddPolicy("QuanLyChucVu.Them", policy =>
+        policy.Requirements.Add(new PermissionRequirement("QuanLyChucVu", "Them")));
+    options.AddPolicy("QuanLyChucVu.Xoa", policy =>
+        policy.Requirements.Add(new PermissionRequirement("QuanLyChucVu", "Xoa")));
+    options.AddPolicy("QuanLyChucVu.Sua", policy =>
+        policy.Requirements.Add(new PermissionRequirement("QuanLyChucVu", "Sua")));
     
 
     // Chức năng QuanLyDanhMuc
