@@ -54,7 +54,6 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         // POST: api/ChucVu/{roleId}/permissions
-        // POST: api/ChucVu/{roleId}/permissions
         [HttpPost("{roleId}/permissions")]
         public async Task<IActionResult> AssignPermissionsToRole(int roleId, [FromBody] PermissionAssignmentDto dto)
         {
