@@ -20,7 +20,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("https://localhost:7007") // Chỉ định các origin bạn cho phép
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10)); ;
     });
 });
 
@@ -184,9 +185,13 @@ builder.Services.AddSingleton<ILogService>(sp =>
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Information);  // Cấu hình log cho SignalR
 
+// Cấu hình SignalR
+builder.Services.AddSignalR();
 // Xây dựng ứng dụng
 var app = builder.Build();
+
 
 // Cấu hình pipeline HTTP
 if (app.Environment.IsDevelopment())
