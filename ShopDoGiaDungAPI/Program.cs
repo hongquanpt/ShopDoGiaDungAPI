@@ -171,6 +171,7 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaiKhoanService, TaiKhoanService>();
 builder.Services.AddScoped<IChucVuService, ChucVuService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddSingleton<ILogService>(sp =>
 {
@@ -229,6 +230,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.MapHub<ChatHub>("/chathub");
 // Map các controller
 app.MapControllers();
 

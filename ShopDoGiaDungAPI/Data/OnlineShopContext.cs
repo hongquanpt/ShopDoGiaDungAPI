@@ -42,6 +42,8 @@ public partial class OnlineShopContext : DbContext
 
     public virtual DbSet<HanhDong> HanhDongs { get; set; }
 
+    public virtual DbSet<Message> Messages { get; set; }
+
     public virtual DbSet<PhanQuyen> PhanQuyens { get; set; }
 
     public virtual DbSet<Quyen> Quyens { get; set; }
@@ -242,6 +244,22 @@ public partial class OnlineShopContext : DbContext
             entity.Property(e => e.TenHanhDong)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.ToTable("Message");
+
+            entity.Property(e => e.Content).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Receiver).WithMany(p => p.MessageReceivers)
+                .HasForeignKey(d => d.ReceiverId)
+                .HasConstraintName("FK_Message_TAIKHOAN1");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.MessageSenders)
+                .HasForeignKey(d => d.SenderId)
+                .HasConstraintName("FK_Message_TAIKHOAN");
         });
 
         modelBuilder.Entity<PhanQuyen>(entity =>

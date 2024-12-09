@@ -31,6 +31,10 @@ public partial class Taikhoan
 
     public virtual DonVi? MaDonViNavigation { get; set; }
 
+    public virtual ICollection<Message> MessageReceivers { get; set; } = new List<Message>();
+
+    public virtual ICollection<Message> MessageSenders { get; set; } = new List<Message>();
+
     public virtual ICollection<TaiKhoanChucVu> TaiKhoanChucVus { get; set; } = new List<TaiKhoanChucVu>();
 
     public virtual ICollection<TaiKhoanPhanQuyen> TaiKhoanPhanQuyens { get; set; } = new List<TaiKhoanPhanQuyen>();

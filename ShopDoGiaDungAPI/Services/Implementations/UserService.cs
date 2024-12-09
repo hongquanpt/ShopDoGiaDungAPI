@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Models;
 using ShopDoGiaDungAPI.Services.Interfaces;
 
 namespace ShopDoGiaDungAPI.Services.Implementations
@@ -14,7 +16,10 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         {
             _context = context;
         }
-
+        public async Task<IEnumerable<Taikhoan>> GetAllUsersAsync()
+        {
+            return await _context.Taikhoans.ToListAsync();
+        }
         // Trong UserService hoặc AccountService
         public async Task<IActionResult> UpdateUserProfile(TaiKhoanDto userDto)
         {
