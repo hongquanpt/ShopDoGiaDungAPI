@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowedOrigins", policy =>
     {
-        policy.WithOrigins("https://localhost:7007") // Chỉ định các origin bạn cho phép
+        policy.WithOrigins("https://localhost:7007", "https://10.0.2.2:7248", "http://192.168.1.40:8081") // Chỉ định các origin bạn cho phép
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()
@@ -172,6 +172,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ITaiKhoanService, TaiKhoanService>();
 builder.Services.AddScoped<IChucVuService, ChucVuService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 
 builder.Services.AddSingleton<ILogService>(sp =>
 {
@@ -231,6 +232,9 @@ app.Use(async (context, next) =>
 });
 
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<OrderHub>("/orderHub");
+
+
 // Map các controller
 app.MapControllers();
 

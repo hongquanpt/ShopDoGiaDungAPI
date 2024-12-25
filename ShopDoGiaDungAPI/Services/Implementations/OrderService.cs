@@ -11,11 +11,12 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     {
         private readonly OnlineShopContext _context;
         private readonly IMinioService _minioService;
-
-        public OrderService(OnlineShopContext context, IMinioService minioService)
+        private readonly IOrderNotificationService _orderNotificationService;
+        public OrderService(OnlineShopContext context, IMinioService minioService, IOrderNotificationService orderNotificationService)
         {
             _context = context;
             _minioService = minioService;
+            _orderNotificationService = orderNotificationService;
         }
 
         public async Task<List<Donhang>> GetPendingOrdersAsync()
@@ -28,17 +29,6 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         // Admin functions
         public IActionResult GetOrders(int status, int page, int pageSize)
         {
-            //var allOrders = from a in _context.Donhangs
-            //                join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
-            //                select new MyOrder()
-            //                {
-            //                    MaDonHang = a.MaDonHang,
-            //                    TongTien = a.TongTien,
-            //                    NguoiNhan = b.NguoiNhan,
-            //                    DiaChi = b.DiaChi,
-            //                    NgayMua = a.NgayLap,
-            //                    TinhTrang = a.TinhTrang
-            //                };
 
             if(status== 10)
             {
@@ -109,6 +99,24 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             {
                 dh.TinhTrang = 2; // Xác nhận đơn hàng
                 _context.SaveChanges();
+
+                // Tạo object data để gửi lên client
+                var myOrder = (from a in _context.Donhangs
+                               join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                               where a.MaDonHang == orderId
+                               select new MyOrder
+                               {
+                                   MaDonHang = a.MaDonHang,
+                                   TongTien = a.TongTien,
+                                   NguoiNhan = b.NguoiNhan,
+                                   DiaChi = b.DiaChi,
+                                   NgayMua = a.NgayLap,
+                                   TinhTrang = a.TinhTrang
+                               }).FirstOrDefault();
+
+                // Gửi thông báo cập nhật đơn hàng đến client
+                _orderNotificationService.NotifyOrderUpdatedAsync(myOrder);
+
                 return new OkObjectResult(new { status = true });
             }
             else
@@ -124,6 +132,22 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             {
                 dh.TinhTrang = 3; // Đã vận chuyển
                 _context.SaveChanges();
+
+                var myOrder = (from a in _context.Donhangs
+                               join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                               where a.MaDonHang == orderId
+                               select new MyOrder
+                               {
+                                   MaDonHang = a.MaDonHang,
+                                   TongTien = a.TongTien,
+                                   NguoiNhan = b.NguoiNhan,
+                                   DiaChi = b.DiaChi,
+                                   NgayMua = a.NgayLap,
+                                   TinhTrang = a.TinhTrang
+                               }).FirstOrDefault();
+
+                _orderNotificationService.NotifyOrderUpdatedAsync(myOrder);
+
                 return new OkObjectResult(new { status = true });
             }
             else
@@ -137,8 +161,24 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             var dh = _context.Donhangs.Find(orderId);
             if (dh != null)
             {
-                dh.TinhTrang = 4; // Đã hủy đơn hàng
+                dh.TinhTrang = 4; // Đã hủy
                 _context.SaveChanges();
+
+                var myOrder = (from a in _context.Donhangs
+                               join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                               where a.MaDonHang == orderId
+                               select new MyOrder
+                               {
+                                   MaDonHang = a.MaDonHang,
+                                   TongTien = a.TongTien,
+                                   NguoiNhan = b.NguoiNhan,
+                                   DiaChi = b.DiaChi,
+                                   NgayMua = a.NgayLap,
+                                   TinhTrang = a.TinhTrang
+                               }).FirstOrDefault();
+
+                _orderNotificationService.NotifyOrderUpdatedAsync(myOrder);
+
                 return new OkObjectResult(new { status = true });
             }
             else
@@ -146,7 +186,6 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 return new NotFoundObjectResult(new { status = false });
             }
         }
-
         public async Task<List<MyOrderDetail>> GetOrderDetails(int orderId)
         {
             var orderDetails = from a in _context.Chitietdonhangs

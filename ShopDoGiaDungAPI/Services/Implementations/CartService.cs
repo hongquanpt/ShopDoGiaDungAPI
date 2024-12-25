@@ -12,10 +12,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     {
         private readonly OnlineShopContext _context;
         private const string SessionCart = "sessionCart";
-
-        public CartService(OnlineShopContext context)
+        private readonly IOrderNotificationService _orderNotificationService;
+        public CartService(OnlineShopContext context, IOrderNotificationService orderNotificationService)
         {
             _context = context;
+            _orderNotificationService = orderNotificationService;
         }
 
         // Phương thức lấy giỏ hàng
@@ -178,74 +179,92 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         public async Task<JsonResult> Checkout(ThongTinThanhToan thanhToan, int? user = null)
         {
             int userId = _context.Taikhoans.FirstOrDefault(s => s.MaTaiKhoan == user)?.MaTaiKhoan ?? 0;
-           
-                // Kiểm tra thông tin thanh toán đầy đủ
-                if (string.IsNullOrEmpty(thanhToan.ten) || string.IsNullOrEmpty(thanhToan.sdt) || string.IsNullOrEmpty(thanhToan.diaChi))
-                {
-                    return new JsonResult(new { status = false, message = "Thông tin thanh toán không đầy đủ" });
-                }
 
-                // Kiểm tra giỏ hàng từ dữ liệu thanh toán
-                if (thanhToan.cartItems == null || !thanhToan.cartItems.Any())
-                {
-                    return new JsonResult(new { status = false, message = "Giỏ hàng trống" });
-                }
-
-                // Tính tổng tiền
-                long total = thanhToan.cartItems.Sum(item => item.quantity * Convert.ToInt32(item.cartItems.giaTien));
-
-                // Tạo đơn hàng mới
-                var order = new Donhang
-                {
-                    MaTaiKhoan = userId, // userId có thể null cho khách vãng lai
-                    NgayLap = DateOnly.FromDateTime(DateTime.Now),
-                    TongTien = total,
-                    TinhTrang = 1 // Giả sử trạng thái 1 là "Đang xử lý"
-                };
-        
-                _context.Donhangs.Add(order);
-                await _context.SaveChangesAsync();
-                var id = order.MaDonHang;
-                var vc = new Vanchuyen();
-                vc.MaDonHang =id;
-                vc.NguoiNhan = thanhToan.ten;
-                vc.DiaChi = thanhToan.diaChi;
-                vc.Sdt = thanhToan.sdt;
-                vc.HinhThucVanChuyen = "Giao tận nhà";
-                _context.Vanchuyens.Add(vc);
-                await _context.SaveChangesAsync();
-
-                // Thêm chi tiết đơn hàng và cập nhật số lượng trong kho
-                foreach (var item in thanhToan.cartItems)
-        {
-            var product = _context.Sanphams.Find(item.cartItems.maSp);
-            if (product != null && product.SoLuongTrongKho >= item.quantity)
+            // Kiểm tra thông tin thanh toán
+            if (string.IsNullOrEmpty(thanhToan.ten) || string.IsNullOrEmpty(thanhToan.sdt) || string.IsNullOrEmpty(thanhToan.diaChi))
             {
-                // Tạo chi tiết đơn hàng
-                var orderDetail = new Chitietdonhang
-                {
-                    MaDonHang = order.MaDonHang,
-                    MaSp = item.cartItems.maSp,
-                    SoLuongMua = item.quantity
-                };
-                product.SoLuongDaBan += item.quantity;
-                product.SoLuongTrongKho -= item.quantity;
+                return new JsonResult(new { status = false, message = "Thông tin thanh toán không đầy đủ" });
+            }
 
-                _context.Chitietdonhangs.Add(orderDetail);
-            }
-            else
+            // Kiểm tra giỏ hàng
+            if (thanhToan.cartItems == null || !thanhToan.cartItems.Any())
             {
-                return new JsonResult(new { status = false, message = $"Sản phẩm {item.cartItems.maSp} không đủ số lượng trong kho" });
+                return new JsonResult(new { status = false, message = "Giỏ hàng trống" });
             }
+
+            // Tính tổng tiền
+            long total = thanhToan.cartItems.Sum(item => item.quantity * Convert.ToInt32(item.cartItems.giaTien));
+
+            // Tạo đơn hàng
+            var order = new Donhang
+            {
+                MaTaiKhoan = userId,
+                NgayLap = DateOnly.FromDateTime(DateTime.Now),
+                TongTien = total,
+                TinhTrang = 1 // Chờ xác nhận
+            };
+
+            _context.Donhangs.Add(order);
+            await _context.SaveChangesAsync();
+
+            var id = order.MaDonHang;
+            var vc = new Vanchuyen
+            {
+                MaDonHang = id,
+                NguoiNhan = thanhToan.ten,
+                DiaChi = thanhToan.diaChi,
+                Sdt = thanhToan.sdt,
+                HinhThucVanChuyen = "Giao tận nhà"
+            };
+            _context.Vanchuyens.Add(vc);
+            await _context.SaveChangesAsync();
+
+            // Thêm chi tiết đơn hàng
+            foreach (var item in thanhToan.cartItems)
+            {
+                var product = _context.Sanphams.Find(item.cartItems.maSp);
+                if (product != null && product.SoLuongTrongKho >= item.quantity)
+                {
+                    var orderDetail = new Chitietdonhang
+                    {
+                        MaDonHang = order.MaDonHang,
+                        MaSp = item.cartItems.maSp,
+                        SoLuongMua = item.quantity
+                    };
+                    product.SoLuongDaBan += item.quantity;
+                    product.SoLuongTrongKho -= item.quantity;
+
+                    _context.Chitietdonhangs.Add(orderDetail);
+                }
+                else
+                {
+                    return new JsonResult(new { status = false, message = $"Sản phẩm {item.cartItems.maSp} không đủ số lượng trong kho" });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Sau khi tạo đơn hàng thành công, gửi thông báo real-time
+            // Lấy đầy đủ thông tin đơn hàng để gửi
+            var myOrder = (from a in _context.Donhangs
+                           join b in _context.Vanchuyens on a.MaDonHang equals b.MaDonHang
+                           where a.MaDonHang == order.MaDonHang
+                           select new MyOrder()
+                           {
+                               MaDonHang = a.MaDonHang,
+                               TongTien = a.TongTien,
+                               NguoiNhan = b.NguoiNhan,
+                               DiaChi = b.DiaChi,
+                               NgayMua = a.NgayLap,
+                               TinhTrang = a.TinhTrang
+                           }).FirstOrDefault();
+
+            // Giả sử bạn đã inject IOrderNotificationService vào constructor hoặc service
+            await _orderNotificationService.NotifyNewOrderAsync(myOrder);
+
+            // Trả về kết quả thành công
+            return new JsonResult(new { status = true });
         }
-
-        await _context.SaveChangesAsync();
-
-        // Trả về kết quả thành công
-        return new JsonResult(new { status = true });
     }
-  
-}
 
-    
-}
+ }

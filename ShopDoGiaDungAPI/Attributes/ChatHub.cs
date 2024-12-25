@@ -25,22 +25,6 @@ public class ChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, userId);
     }
 
-    // Khách hàng gửi tin nhắn đến admin
-    //public async Task SendMessageToAdmin(string userId, string message)
-    //{
-    //    // Lưu tin nhắn vào DB (giả sử adminId = 2)
-    //    var msg = new Message
-    //    {
-    //        SenderId = int.Parse(userId),
-    //        ReceiverId = 2,
-    //        Content = message,
-    //        CreatedAt = DateTime.UtcNow
-    //    };
-    //    await _messageService.SaveMessageAsync(msg);
-
-    //    // Gửi tin nhắn này tới group của userId (admin nào đã join group này sẽ nhận được)
-    //    await Clients.Group(userId).SendAsync("ReceiveMessage", userId, message);
-    //}
     public async Task SendMessageToAdmin(string user, string message)
     {
         if (!int.TryParse(user, out int userIdInt))

@@ -7,13 +7,15 @@ namespace ShopDoGiaDungAPI.Data;
 
 public partial class OnlineShopContext : DbContext
 {
+    private readonly IConfiguration _configuration;
     public OnlineShopContext()
     {
     }
 
-    public OnlineShopContext(DbContextOptions<OnlineShopContext> options)
+    public OnlineShopContext(DbContextOptions<OnlineShopContext> options, IConfiguration configuration)
         : base(options)
     {
+        _configuration = configuration;
     }
 
     public virtual DbSet<ActionT> ActionTs { get; set; }
@@ -64,8 +66,8 @@ public partial class OnlineShopContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=QUAN\\QUAN;Initial Catalog=OnlineShop;Integrated Security=True;Encrypt=false;Trusted_Connection=True;TrustServerCertificate=True;");
-
+        // => optionsBuilder.UseSqlServer("Data Source=QUAN\\QUAN;Initial Catalog=OnlineShop;Integrated Security=True;Encrypt=false;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer(_configuration.GetConnectionString("AwsDB"));
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActionT>(entity =>
