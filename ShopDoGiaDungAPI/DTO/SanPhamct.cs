@@ -29,8 +29,8 @@
         public string? Hang { get; set; }
 
         public string? DanhMuc { get; set; }
-        public int? MaH { get; set; }
+        public int? MaHang { get; set; }
 
-        public int? MaDM { get; set; }
+        public int? MaDanhMuc { get; set; }
     }
 }

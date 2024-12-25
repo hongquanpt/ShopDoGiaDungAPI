@@ -43,8 +43,8 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                                               GiaTien = sp.GiaTien,
                                               Hang = h.TenHang,
                                               DanhMuc = dm.TenDanhMuc,
-                                              MaH = h.MaHang,
-                                              MaDM = dm.MaDanhMuc
+                                              MaHang = h.MaHang,
+                                              MaDanhMuc = dm.MaDanhMuc
                                           };
 
             var totalItemCount = await query.CountAsync();
@@ -92,8 +92,8 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                                      GiaTien = sp.GiaTien,
                                      Hang = h.TenHang,
                                      DanhMuc = dm.TenDanhMuc,
-                                     MaH = h.MaHang,
-                                     MaDM = dm.MaDanhMuc
+                                     MaHang = h.MaHang,
+                                     MaDanhMuc = dm.MaDanhMuc
                                  }).FirstOrDefaultAsync();
 
             if (sanpham == null)
