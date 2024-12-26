@@ -287,12 +287,13 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     }
                 }
             }
-
+            int iddm = int.Parse(DanhMuc);
+            int idh = int.Parse(Hang);
             // Lưu danh mục và hãng
-            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.TenDanhMuc == DanhMuc);
+            var dm = _context.Danhmucsanphams.FirstOrDefault(s => s.MaDanhMuc == iddm);
             if (dm != null) sp.MaDanhMuc = dm.MaDanhMuc;
 
-            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.TenHang == Hang);
+            var hang = _context.Hangsanxuats.FirstOrDefault(s => s.MaHang == idh);
             if (hang != null) sp.MaHang = hang.MaHang;
 
             await _context.SaveChangesAsync();

@@ -76,7 +76,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("ProductDetail/${id}")]
+        [HttpGet("ProductDetail/{productId}")]
         public async Task<IActionResult> ProductDetail(int productId)
         {
             var sanpham = await _productService.GetProductDetailAsync(productId);
