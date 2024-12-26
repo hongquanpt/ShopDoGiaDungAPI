@@ -76,7 +76,7 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("ProductDetail")]
+        [HttpGet("ProductDetail/${id}")]
         public async Task<IActionResult> ProductDetail(int productId)
         {
             var sanpham = await _productService.GetProductDetailAsync(productId);
@@ -88,7 +88,17 @@ namespace ShopDoGiaDungAPI.Controllers
 
             return Ok(new { sanpham = sanpham });
         }
+        [AllowAnonymous]
+        [HttpPost("ProductDetail")]
+        public async Task<IActionResult> ProductDetail([FromBody] ProductDetailRequest request)
+        {
+            if (request == null || request.Id <= 0)
+            {
+                return BadRequest(new { status = false, message = "Invalid request data" });
+            }
 
+            return await _productService.GetProductDetail(request.Id);
+        }
         [Authorize]
         [Permission("Access", "Xem")]
         [HttpGet("MyOrder")]
