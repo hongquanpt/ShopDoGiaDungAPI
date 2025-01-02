@@ -12,13 +12,14 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
         public AwsS3Service(IConfiguration configuration)
         {
-            var awsAccessKey = configuration["AWS:AccessKey"];
-            var awsSecretKey = configuration["AWS:SecretKey"];
-            var awsRegion = configuration["AWS:Region"];
-            _bucketName = configuration["AWS:BucketName"];
+            var awsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY"); // Lấy từ biến môi trường
+            var awsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_KEY"); // Lấy từ biến môi trường
+            var awsRegion = configuration["AWS:Region"]; // Đọc từ appsettings.json
+            var bucketName = configuration["AWS:BucketName"];
 
             _s3Client = new AmazonS3Client(awsAccessKey, awsSecretKey, Amazon.RegionEndpoint.GetBySystemName(awsRegion));
         }
+
 
         public async Task<string> UploadFileAsync(IFormFile file)
         {
