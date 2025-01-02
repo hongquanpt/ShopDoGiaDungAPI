@@ -12,13 +12,16 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
         public AwsS3Service(IConfiguration configuration)
         {
-            var awsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY"); // Lấy từ biến môi trường
-            var awsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_KEY"); // Lấy từ biến môi trường
-            var awsRegion = configuration["AWS:Region"]; // Đọc từ appsettings.json
-            var bucketName = configuration["AWS:BucketName"];
+            var awsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY");
+            var awsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_KEY");
+            var awsRegion = configuration["AWS:Region"];
 
+            _bucketName = configuration["AWS:BucketName"]; // Gán bucketName vào _bucketName
+
+            // Tạo Amazon S3 Client
             _s3Client = new AmazonS3Client(awsAccessKey, awsSecretKey, Amazon.RegionEndpoint.GetBySystemName(awsRegion));
         }
+
 
 
         public async Task<string> UploadFileAsync(IFormFile file)
@@ -35,24 +38,37 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     ContentType = file.ContentType
                 };
 
+                // Upload file lên S3
                 await _s3Client.PutObjectAsync(putRequest);
             }
 
             return fileName;
         }
 
+
         public async Task<string> GetPreSignedUrlAsync(string fileName)
         {
-            var request = new GetPreSignedUrlRequest
+            try
             {
-                BucketName = _bucketName,
-                Key = fileName,
-                Expires = DateTime.UtcNow.AddHours(1) // 1 giờ
-            };
+                // Tạo yêu cầu Pre-signed URL
+                var request = new GetPreSignedUrlRequest
+                {
+                    BucketName = _bucketName,
+                    Key = fileName,
+                    Expires = DateTime.UtcNow.AddHours(1) // URL có hiệu lực 1 giờ
+                };
 
-            string url = _s3Client.GetPreSignedURL(request);
-            return url;
+                // Tạo Pre-signed URL
+                string url = _s3Client.GetPreSignedURL(request);
+                return url;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating pre-signed URL: {ex.Message}");
+                throw;
+            }
         }
+
 
         public async Task DeleteFileAsync(string fileName)
         {
