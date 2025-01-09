@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Attributes;
+using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System;
+using System.Security.Claims;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -12,19 +15,35 @@ namespace ShopDoGiaDungAPI.Controllers
     {
         private readonly IAccountService _accountService;
         private readonly IRoleService _roleService;
-
-        public AccountController(IAccountService accountService, IRoleService roleService)
+        private readonly ILogService _logService;
+        public AccountController(IAccountService accountService, IRoleService roleService, ILogService logService)
         {
             _accountService = accountService;
             _roleService = roleService;
+            _logService = logService;
         }
-
         [Permission("QuanLyTaiKhoan", "Xem")]
         [HttpGet("accounts")]
-        public IActionResult QuanLyTK(int page = 1, int pageSize = 10)
+        public async Task<IActionResult> QuanLyTK(int page = 1, int pageSize = 10)
         {
+            // Lấy userId từ claim NameIdentifier (JWT)
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+
+            // Lấy IP
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Ghi log: hành động "Xem danh sách tài khoản"
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Xem danh sách tài khoản",
+                objects: $"Xem tài khoản page={page}, pageSize={pageSize}",
+                ip: ip
+            );
+
+            // Thực hiện logic lấy danh sách tài khoản
             return _accountService.GetAccounts(page, pageSize);
         }
+
 
         [Permission("QuanLyTaiKhoan", "Sua")]
         [HttpPut("accounts/{matk}/role")]
@@ -37,7 +56,25 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpDelete("accounts/{matk}")]
         public IActionResult XoaTK(int matk)
         {
-            return _accountService.DeleteAccount(matk);
+            // 1. Xóa tài khoản
+            var result = _accountService.DeleteAccount(matk);
+
+            // 2. Sau khi xóa, nếu thành công, ghi log
+            // Lấy userId từ NameIdentifier
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+
+            // Lấy IP
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log "Đã xóa tài khoản..."
+            _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Xóa tài khoản",
+                objects: $"Đã xóa tài khoản ID={matk}",
+                ip: ip
+            );
+
+            return result;
         }
 
         [Permission("Access", "Xem")]

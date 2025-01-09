@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Services.Interfaces;
@@ -15,10 +16,11 @@ namespace ShopDoGiaDungAPI.Controllers
     public class CartControllerAPI : ControllerBase
     {
         private readonly ICartService _cartService;
-
-        public CartControllerAPI(ICartService cartService)
+        private readonly IHubContext<OrderHub> _orderHubContext;
+        public CartControllerAPI(ICartService cartService, IHubContext<OrderHub> orderHubContext)
         {
             _cartService = cartService;
+            _orderHubContext = orderHubContext;
         }
 
         [AllowAnonymous]
@@ -69,20 +71,44 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [AllowAnonymous]
+        // POST: api/CartControllerAPI/ThanhToan
         [HttpPost("ThanhToan")]
         public async Task<JsonResult> ThanhToan([FromBody] ThongTinThanhToan thanhToan)
         {
+            // Kiểm tra user đăng nhập
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
             if (userIdClaim == null)
             {
                 return new JsonResult(new { status = false, message = "User not authenticated" });
             }
 
-            int userId = int.Parse (userIdClaim.Value);
+            int userId = int.Parse(userIdClaim.Value);
 
 
-            return await _cartService.Checkout(thanhToan, userId);
+            var checkoutResult = await _cartService.Checkout(thanhToan, userId);
+        
+            dynamic resultValue = checkoutResult.Value;
+
+            bool status = resultValue.status;
+            if (status)
+            {
+
+                var newOrderInfo = new
+                {
+                    Ten = thanhToan.ten,
+                    SDT = thanhToan.sdt,
+                    DiaChi = thanhToan.diaChi,
+
+                    NgayLap = System.DateTime.Now
+                };
+
+
+                await _orderHubContext.Clients.All.SendAsync("ReceiveNewOrder", newOrderInfo);
+
+            }
+
+
+            return checkoutResult;
         }
     }
 }

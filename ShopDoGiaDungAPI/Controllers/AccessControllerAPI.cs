@@ -6,6 +6,7 @@ using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Security.Claims;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.Services.Implementations;
+using ShopDoGiaDungAPI.Services;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -17,11 +18,13 @@ namespace ShopDoGiaDungAPI.Controllers
         private readonly ILogger<AccessControllerAPI> _logger;
         private readonly IAuthService _authService;
         private readonly IPermissionService _permissionService;
+        private readonly ILogService _logService;
 
-        public AccessControllerAPI(IAuthService authService, IPermissionService permissionService)
+        public AccessControllerAPI(IAuthService authService, IPermissionService permissionService, ILogService logService)
         {
             _authService = authService;
             _permissionService= permissionService;
+            _logService = logService;
         }
 
         [AllowAnonymous]
@@ -30,13 +33,19 @@ namespace ShopDoGiaDungAPI.Controllers
         {
             var authResult = await _authService.LoginAsync(loginInfo);
 
+            // Ghi log - ví dụ:
+            await _logService.InsertLogAsync(
+                userId: authResult.User.Id,           
+                action: "Login",                      
+                objects: "Người dùng đăng nhập",       
+                ip: Request.HttpContext.Connection.RemoteIpAddress?.ToString() 
+            );
+
             if (authResult.Token == null)
             {
-                // Đăng nhập không thành công
                 return BadRequest(new { message = authResult.Message });
             }
 
-            // Đăng nhập thành công
             return Ok(new
             {
                 message = authResult.Message,
@@ -44,6 +53,7 @@ namespace ShopDoGiaDungAPI.Controllers
                 user = authResult.User
             });
         }
+
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -94,11 +104,19 @@ namespace ShopDoGiaDungAPI.Controllers
         [Authorize]
         [Permission("Access", "Xem")]
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            // Thông báo cho client xóa JWT token
+            // Ghi log
+            await _logService.InsertLogAsync(
+                userId: User.Identity?.Name ?? "Unknown", // Nếu bạn lấy được userId từ token/claims
+                action: "Logout",
+                objects: "Người dùng đăng xuất",
+                ip: Request.HttpContext.Connection.RemoteIpAddress?.ToString()
+            );
+
             return Ok(new { message = "Đăng xuất thành công" });
         }
+
 
         [Authorize]
         [Permission("Access", "Xem")]

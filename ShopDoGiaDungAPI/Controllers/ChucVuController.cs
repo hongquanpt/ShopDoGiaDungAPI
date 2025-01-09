@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
 using ShopDoGiaDungAPI.Models;
+using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ShopDoGiaDungAPI.Controllers
@@ -16,10 +18,11 @@ namespace ShopDoGiaDungAPI.Controllers
     public class ChucVuController : ControllerBase
     {
         private readonly IChucVuService _chucVuService;
-
-        public ChucVuController(IChucVuService chucVuService)
+        private readonly ILogService _logService;
+        public ChucVuController(IChucVuService chucVuService, ILogService logService)
         {
             _chucVuService = chucVuService;
+            _logService = logService;
         }
         // GET: api/Role/roles
         [Authorize]
@@ -62,6 +65,17 @@ namespace ShopDoGiaDungAPI.Controllers
                 return BadRequest(new { message = "The permissions field is required and cannot be empty." });
             }
 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Thêm / Gán quyền cho Role
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Thêm/Sửa permissions Role",
+                objects: $"roleId={roleId} => permissions=[{string.Join(",", dto.Permissions)}]",
+                ip: ip
+            );
+
             var result = await _chucVuService.AssignPermissionsToRoleAsync(roleId, dto.Permissions);
             if (result)
             {
@@ -82,6 +96,17 @@ namespace ShopDoGiaDungAPI.Controllers
             {
                 return BadRequest(new { message = "Tên chức vụ không được để trống." });
             }
+
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Thêm chức vụ
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Thêm Chức Vụ",
+                objects: $"TenChucVu={newRole.TenChucVu}",
+                ip: ip
+            );
 
             var result = await _chucVuService.AddRoleAsync(newRole);
             if (result)
@@ -105,6 +130,17 @@ namespace ShopDoGiaDungAPI.Controllers
                 return BadRequest(new { message = "Tên chức vụ không được để trống." });
             }
 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Sửa chức vụ
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Sửa Chức Vụ",
+                objects: $"roleId={roleId}, newName={updatedRole.TenChucVu}",
+                ip: ip
+            );
+
             var result = await _chucVuService.UpdateRoleAsync(roleId, updatedRole);
             if (result)
             {
@@ -122,6 +158,17 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpDelete("{roleId}")]
         public async Task<IActionResult> DeleteRole(int roleId)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Xóa chức vụ
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Xóa Chức Vụ",
+                objects: $"roleId={roleId}",
+                ip: ip
+            );
+
             var result = await _chucVuService.DeleteRoleAsync(roleId);
             if (result)
             {

@@ -1,50 +1,48 @@
 ﻿using MongoDB.Driver;
-using ShopDoGiaDungAPI.Services.Interfaces;
+using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.DTO;
-using MongoDB.Bson;
-
-
-namespace ShopDoGiaDungAPI.Services.Implementations
+using ShopDoGiaDungAPI.Services.Interfaces;
+namespace ShopDoGiaDungAPI.Services
 {
     public class LogService : ILogService
     {
-        private readonly IMongoCollection<LogEntry> _logCollection;
+        private readonly MongoDbContext _mongoDbContext;
 
-        public LogService(string connectionString, string databaseName, string collectionName)
+        public LogService(MongoDbContext mongoDbContext)
         {
-            var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(databaseName);
-            _logCollection = database.GetCollection<LogEntry>(collectionName);
+            _mongoDbContext = mongoDbContext;
         }
 
-        public void WriteLog(string userid, string action, string objects, string ip)
+        public async Task InsertLogAsync(string userId, string action, string objects, string ip)
         {
             var logEntry = new LogEntry
             {
-                Id = ObjectId.GenerateNewId().ToString(),
                 Timestamp = DateTime.UtcNow,
-                userid = userid,
+                userid = userId,
                 action = action,
                 objects = objects,
                 ip = ip
             };
 
-            _logCollection.InsertOne(logEntry);
+            await _mongoDbContext.UserLogs.InsertOneAsync(logEntry);
         }
-
-        public async Task WriteLogAsync(string userid, string action, string objects, string ip)
+        // Hàm lấy danh sách Log
+        public async Task<(IEnumerable<LogEntry> Logs, int TotalCount)> GetLogsAsync(int page, int pageSize)
         {
-            var logEntry = new LogEntry
-            {
-                Id = ObjectId.GenerateNewId().ToString(),
-                Timestamp = DateTime.UtcNow,
-                userid = userid,
-                action = action,
-                objects = objects,
-                ip = ip
-            };
+            var skip = (page - 1) * pageSize;
 
-            await _logCollection.InsertOneAsync(logEntry);
+            // Đếm tổng
+            var totalCount = (int)await _mongoDbContext.UserLogs.CountDocumentsAsync(FilterDefinition<LogEntry>.Empty);
+
+            // Lấy data phân trang
+            var logs = await _mongoDbContext.UserLogs
+                .Find(FilterDefinition<LogEntry>.Empty)
+                .Skip(skip)
+                .Limit(pageSize)
+                .SortByDescending(x => x.Timestamp) // sắp xếp mới nhất
+                .ToListAsync();
+
+            return (logs, totalCount);
         }
     }
 }

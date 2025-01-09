@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("MyAllowedOrigins", policy =>
     {
-        policy.WithOrigins("https://localhost:7007", "https://10.0.2.2:7248", "http://192.168.1.40:8081") // Chỉ định các origin bạn cho phép
+        policy.WithOrigins("https://localhost:7007", "https://10.0.2.2:7248", "http://192.168.1.40:8081", "http://10.0.2.2:5222") // Chỉ định các origin bạn cho phép
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()
@@ -164,9 +164,9 @@ builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-//builder.Services.AddScoped<IMinioService, MinioService>();
-builder.Services.AddScoped<IMinioService, AwsS3Service>();
-
+builder.Services.AddScoped<IMinioService, MinioService>();
+//builder.Services.AddScoped<IMinioService, AwsS3Service>();
+builder.Services.AddScoped<ILogService, LogService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
@@ -176,15 +176,12 @@ builder.Services.AddScoped<IChucVuService, ChucVuService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IOrderNotificationService, OrderNotificationService>();
 
-builder.Services.AddSingleton<ILogService>(sp =>
+var mongoSettings = builder.Configuration.GetSection("MongoSettings");
+string connectionString = mongoSettings["ConnectionString"];
+string databaseName = mongoSettings["DatabaseName"];
+builder.Services.AddSingleton<MongoDbContext>(sp =>
 {
-    // Sử dụng cấu hình từ appsettings.json
-    var mongoSettings = builder.Configuration.GetSection("MongoDB");
-    string mongoConnectionString = mongoSettings["ConnectionString"];
-    string databaseName = mongoSettings["DatabaseName"];
-    string collectionName = mongoSettings["CollectionName"];
-
-    return new LogService(mongoConnectionString, databaseName, collectionName);
+    return new MongoDbContext(connectionString, databaseName);
 });
 
 builder.Logging.ClearProviders();
@@ -215,6 +212,19 @@ app.UseHttpsRedirection();
 
 // Áp dụng chính sách CORS
 app.UseCors("MyAllowedOrigins");
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers["Origin"].ToString();
+
+    if (origin == "https://bogus.origin.hcl.com")
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden; 
+        await context.Response.WriteAsync("CORS policy does not allow this origin.");
+        return;
+    }
+
+    await next();
+});
 
 // Sử dụng Session
 app.UseSession();

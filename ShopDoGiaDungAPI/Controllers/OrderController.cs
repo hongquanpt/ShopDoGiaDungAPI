@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Security.Claims;
 
 namespace ShopDoGiaDungAPI.Controllers
 {
@@ -13,10 +14,11 @@ namespace ShopDoGiaDungAPI.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
-
-        public OrderController(IOrderService orderService)
+        private readonly ILogService _logService;
+        public OrderController(IOrderService orderService, ILogService logService)
         {
             _orderService = orderService;
+            _logService = logService;
         }
 
         [Permission("QuanLyDonHang", "Xem")]
@@ -29,22 +31,55 @@ namespace ShopDoGiaDungAPI.Controllers
         [Permission("Access", "Xem")]
         [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/confirm/{madh}")]
-        public IActionResult XacNhanDH(int madh)
+        public async Task<IActionResult> XacNhanDH(int madh)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Xác nhận đơn hàng
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Xác nhận đơn hàng",
+                objects: $"madh={madh}",
+                ip: ip
+            );
+
             return _orderService.ConfirmOrder(madh);
         }
 
         [Permission("QuanLyDonHang", "Sua")]
         [HttpPost("orders/ship/{madh}")]
-        public IActionResult VanChuyenDH(int madh)
+        public async Task<IActionResult> VanChuyenDH(int madh)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Vận chuyển đơn hàng
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Vận chuyển đơn hàng",
+                objects: $"madh={madh}",
+                ip: ip
+            );
+
             return _orderService.ShipOrder(madh);
         }
 
         [Permission("Access", "Xem")]
         [HttpPost("orders/cancel/{madh}")]
-        public IActionResult HuyDH(int madh)
+        public async Task<IActionResult> HuyDH(int madh)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Log: Hủy đơn hàng
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Hủy đơn hàng",
+                objects: $"madh={madh}",
+                ip: ip
+            );
+
             return _orderService.CancelOrder(madh);
         }
 
@@ -52,8 +87,18 @@ namespace ShopDoGiaDungAPI.Controllers
         [HttpGet("orders/{orderId}/details")]
         public async Task<IActionResult> GetOrderDetails(int orderId)
         {
-            var orderDetails = await _orderService.GetOrderDetails(orderId);
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "UnknownUser";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
+            // Log: Xem chi tiết đơn hàng
+            await _logService.InsertLogAsync(
+                userId: currentUserId,
+                action: "Xem chi tiết đơn hàng",
+                objects: $"orderId={orderId}",
+                ip: ip
+            );
+
+            var orderDetails = await _orderService.GetOrderDetails(orderId);
             if (orderDetails == null || orderDetails.Count == 0)
             {
                 return NotFound();
