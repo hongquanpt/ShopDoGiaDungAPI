@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Security.Claims;
 
@@ -16,12 +17,14 @@ namespace ShopDoGiaDungAPI.Controllers
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
         private readonly IUserService _userService;
+        private readonly ILogService _logService;
 
-        public HomeControllerAPI(IProductService productService, IOrderService orderService, IUserService userService)
+        public HomeControllerAPI(IProductService productService, IOrderService orderService, IUserService userService,ILogService logService)
         {
             _productService = productService;
             _orderService = orderService;
             _userService = userService;
+            _logService = logService;
         }
 
         [AllowAnonymous]
@@ -105,24 +108,41 @@ namespace ShopDoGiaDungAPI.Controllers
         public async Task<IActionResult> MyOrder(string typeMenu = "tatca", int PageIndex = 1, int PageSize = 100)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
+            if (userIdClaim == null) return Unauthorized();
 
             int userId = int.Parse(userIdClaim.Value);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Ghi log: Xem đơn hàng của chính user
+            await _logService.InsertLogAsync(
+                userId: userId.ToString(),
+                action: "Xem Đơn Hàng Cá Nhân",
+                objects: $"typeMenu={typeMenu}, PageIndex={PageIndex}, PageSize={PageSize}",
+                ip: ip
+            );
 
             return await _orderService.GetUserOrders(userId, typeMenu, PageIndex, PageSize);
         }
+
 
         [Authorize]
         [Permission("Access", "Sua")]
         [HttpPost("ChangeProfile")]
         public async Task<IActionResult> ChangeProfile([FromBody] TaiKhoanDto tk)
         {
-            var result = await _userService.UpdateUserProfile(tk);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null) return Unauthorized();
 
+            // Ghi log: Thay đổi thông tin cá nhân
+            await _logService.InsertLogAsync(
+                userId: userIdClaim.Value,
+                action: "Thay Đổi Thông Tin Cá Nhân",
+                objects: $"Email={tk.Email}, SDT={tk.Sdt}, DiaChi={tk.DiaChi}",
+                ip: ip
+            );
+
+            var result = await _userService.UpdateUserProfile(tk);
             if (result is OkObjectResult okResult)
             {
                 dynamic response = okResult.Value;
@@ -134,9 +154,9 @@ namespace ShopDoGiaDungAPI.Controllers
                     return new OkObjectResult(response);
                 }
             }
-
             return result;
         }
+
 
         [Authorize]
         [Permission("Access", "Xoa")]
@@ -144,16 +164,22 @@ namespace ShopDoGiaDungAPI.Controllers
         public async Task<IActionResult> HuyDonHang(int ma)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
+            if (userIdClaim == null) return Unauthorized();
 
             int userId = int.Parse(userIdClaim.Value);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Ghi log: Hủy đơn hàng
+            await _logService.InsertLogAsync(
+                userId: userId.ToString(),
+                action: "Hủy Đơn Hàng",
+                objects: $"MaDonHang={ma}",
+                ip: ip
+            );
 
             return await _orderService.CancelUserOrder(ma, userId);
         }
+
 
         [Authorize]
         [Permission("Access", "Sua")]
@@ -161,15 +187,21 @@ namespace ShopDoGiaDungAPI.Controllers
         public async Task<IActionResult> DaNhanHang(int ma)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
+            if (userIdClaim == null) return Unauthorized();
 
             int userId = int.Parse(userIdClaim.Value);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            // Ghi log: Xác nhận đã nhận hàng
+            await _logService.InsertLogAsync(
+                userId: userId.ToString(),
+                action: "Xác Nhận Đã Nhận Hàng",
+                objects: $"MaDonHang={ma}",
+                ip: ip
+            );
 
             return await _orderService.ConfirmOrderReceived(ma, userId);
         }
+
     }
 }

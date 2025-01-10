@@ -12,11 +12,13 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         private readonly OnlineShopContext _context;
         private readonly IMinioService _minioService;
         private readonly IOrderNotificationService _orderNotificationService;
-        public OrderService(OnlineShopContext context, IMinioService minioService, IOrderNotificationService orderNotificationService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public OrderService(OnlineShopContext context, IMinioService minioService, IOrderNotificationService orderNotificationService, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _minioService = minioService;
             _orderNotificationService = orderNotificationService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<List<Donhang>> GetPendingOrdersAsync()
@@ -200,11 +202,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                                    SoLuong = a.SoLuongMua,
                                    ThanhTien = b.GiaTien * a.SoLuongMua
                                };
-
+            var httpContext = _httpContextAccessor.HttpContext;
             var orderDetailsList = orderDetails.ToList();
             foreach (var sp in orderDetailsList)
             {
-                sp.Anh = await _minioService.GetPreSignedUrlAsync(sp.Anh);
+                sp.Anh = await _minioService.GetPreSignedUrlAsync(sp.Anh, httpContext);
             }
 
             return orderDetailsList;

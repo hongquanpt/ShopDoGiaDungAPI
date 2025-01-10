@@ -7,6 +7,7 @@ using ShopDoGiaDungAPI.Data;
 using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Implementations;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using System.Net;
 using System.Text;
 
 // Tạo builder
@@ -47,7 +48,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
     });
+// Cấu hình HTTPS
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Lắng nghe trên cổng 5222 cho HTTP
+    options.Listen(IPAddress.Loopback, 5222);
 
+    // Lắng nghe trên cổng 7248 cho HTTPS
+    options.Listen(IPAddress.Loopback, 7248, listenOptions =>
+    {
+        listenOptions.UseHttps();  // Kết nối qua HTTPS
+    });
+});
 // Đăng ký Authorization Policies dựa trên chức năng và hành động
 builder.Services.AddAuthorization(options =>
 {
@@ -206,9 +218,6 @@ else
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
-// Sử dụng HTTPS
-app.UseHttpsRedirection();
 
 // Áp dụng chính sách CORS
 app.UseCors("MyAllowedOrigins");

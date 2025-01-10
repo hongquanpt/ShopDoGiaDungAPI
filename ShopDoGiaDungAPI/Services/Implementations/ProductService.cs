@@ -12,11 +12,12 @@ namespace ShopDoGiaDungAPI.Services.Implementations
     {
         private readonly OnlineShopContext _context;
         private readonly IMinioService _minioService;
-
-        public ProductService(OnlineShopContext context, IMinioService minioService)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ProductService(OnlineShopContext context, IMinioService minioService, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _minioService = minioService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // Implement all methods from IProductService
@@ -49,16 +50,16 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             var totalItemCount = await query.CountAsync();
             var model = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
+            var httpContext = _httpContextAccessor.HttpContext;
             // Tạo Pre-signed URL cho mỗi ảnh trước khi trả về
             foreach (var sp in model)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
-                sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2);
-                sp.Anh3 = await _minioService.GetPreSignedUrlAsync(sp.Anh3);
-                sp.Anh4 = await _minioService.GetPreSignedUrlAsync(sp.Anh4);
-                sp.Anh5 = await _minioService.GetPreSignedUrlAsync(sp.Anh5);
-                sp.Anh6 = await _minioService.GetPreSignedUrlAsync(sp.Anh6);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext );
+                sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2, httpContext);
+                sp.Anh3 = await _minioService.GetPreSignedUrlAsync(sp.Anh3,httpContext);
+                sp.Anh4 = await _minioService.GetPreSignedUrlAsync(sp.Anh4,httpContext);
+                sp.Anh5 = await _minioService.GetPreSignedUrlAsync(sp.Anh5,httpContext);
+                sp.Anh6 = await _minioService.GetPreSignedUrlAsync(sp.Anh6,httpContext);
             }
 
             return new OkObjectResult(new
@@ -71,6 +72,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         }
         public async Task<SanPhamct> GetProductDetailAsync(int productId)
         {
+            var httpContext = _httpContextAccessor.HttpContext;
             // Truy vấn sản phẩm dựa trên productId
             var sanpham = await (from sp in _context.Sanphams
                                  join h in _context.Hangsanxuats on sp.MaHang equals h.MaHang
@@ -102,12 +104,12 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             }
 
             // Tạo Pre-signed URL cho mỗi ảnh
-            sanpham.Anh1 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh1);
-            sanpham.Anh2 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh2);
-            sanpham.Anh3 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh3);
-            sanpham.Anh4 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh4);
-            sanpham.Anh5 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh5);
-            sanpham.Anh6 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh6);
+            sanpham.Anh1 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh1,httpContext);
+            sanpham.Anh2 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh2,httpContext);
+            sanpham.Anh3 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh3,httpContext);
+            sanpham.Anh4 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh4,httpContext);
+            sanpham.Anh5 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh5,httpContext);
+            sanpham.Anh6 = await _minioService.GetPreSignedUrlAsync(sanpham.Anh6,httpContext);
 
             return sanpham;
         }
@@ -307,11 +309,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             var sanpham = await _context.Sanphams.OrderByDescending(a => a.SoLuongDaBan).Take(6).ToListAsync();
             var danhmucsp = await _context.Danhmucsanphams.ToListAsync();
             var hang = await _context.Hangsanxuats.ToListAsync();
-
+            var httpContext = _httpContextAccessor.HttpContext;
             // Tạo Pre-signed URL cho ảnh sản phẩm
             foreach (var sp in sanpham)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext);
             }
 
             return new OkObjectResult(new
@@ -335,11 +337,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             var count = await query.CountAsync();
             var model = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
-
+            var httpContext = _httpContextAccessor.HttpContext;
             // Tạo Pre-signed URL cho ảnh sản phẩm
             foreach (var sp in model)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext);
             }
 
             return new OkObjectResult(new
@@ -362,7 +364,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             {
                 query = query.Where(item => item.GiaTien < maxPrice && item.GiaTien > minPrice);
             }
-
+            var httpContext = _httpContextAccessor.HttpContext;
             query = orderPrice == "tang" ? query.OrderBy(item => item.GiaTien) : query.OrderByDescending(item => item.GiaTien);
 
             var count = await query.CountAsync();
@@ -371,7 +373,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
             // Tạo Pre-signed URL cho ảnh sản phẩm
             foreach (var sp in model)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext);
             }
 
             return new OkObjectResult(new
@@ -403,19 +405,19 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             int? sum = danhgia.Sum(item => item.DanhGia);
             double sao = danhgia.Count() > 0 ? Math.Round((double)sum / danhgia.Count(), 1) : 0;
-
+            var httpContext = _httpContextAccessor.HttpContext;
             var sp = await _context.Sanphams.FindAsync(productId);
             if(sp == null)
             {
                 return new OkObjectResult(new { status = false });
             }
             // Tạo Pre-signed URL cho ảnh sản phẩm
-            sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
-            sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2);
-            sp.Anh3 = await _minioService.GetPreSignedUrlAsync(sp.Anh3);
-            sp.Anh4 = await _minioService.GetPreSignedUrlAsync(sp.Anh4);
-            sp.Anh5 = await _minioService.GetPreSignedUrlAsync(sp.Anh5);
-            sp.Anh6 = await _minioService.GetPreSignedUrlAsync(sp.Anh6);
+            sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1, httpContext);
+            sp.Anh2 = await _minioService.GetPreSignedUrlAsync(sp.Anh2, httpContext);
+            sp.Anh3 = await _minioService.GetPreSignedUrlAsync(sp.Anh3, httpContext);
+            sp.Anh4 = await _minioService.GetPreSignedUrlAsync(sp.Anh4, httpContext);
+            sp.Anh5 = await _minioService.GetPreSignedUrlAsync(sp.Anh5, httpContext);
+            sp.Anh6 = await _minioService.GetPreSignedUrlAsync(sp.Anh6, httpContext);
 
             return new OkObjectResult(new
             {
@@ -439,11 +441,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             var count = await model.CountAsync();
             var dt = await model.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
-
+            var httpContext = _httpContextAccessor.HttpContext;
             // Tạo Pre-signed URL cho ảnh sản phẩm
             foreach (var sp in dt)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext);
             }
 
             return new OkObjectResult(new
@@ -509,11 +511,11 @@ namespace ShopDoGiaDungAPI.Services.Implementations
 
             // Lấy dữ liệu trang
             var dt = await model.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
-
+            var httpContext = _httpContextAccessor.HttpContext;
             // Tạo URL tạm thời cho ảnh sản phẩm
             foreach (var sp in dt)
             {
-                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1);
+                sp.Anh1 = await _minioService.GetPreSignedUrlAsync(sp.Anh1,httpContext);
             }
 
             // Trả về kết quả

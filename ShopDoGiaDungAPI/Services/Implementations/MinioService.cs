@@ -1,6 +1,8 @@
 ﻿using Minio.DataModel.Args;
 using Minio;
 using ShopDoGiaDungAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace ShopDoGiaDungAPI.Services.Implementations
 {
@@ -10,9 +12,15 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         private readonly string _bucketName;
         private readonly string _endpoint;
 
-        public MinioService(IConfiguration configuration)
+        public MinioService(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
-            _endpoint = configuration["MinIO:Endpoint"];
+            // Kiểm tra nếu ứng dụng chạy trên localhost hay không
+            var isLocalhost = httpContextAccessor.HttpContext.Request.Host.Host == "localhost" ||
+                              httpContextAccessor.HttpContext.Request.Host.Host == "127.0.0.1";
+
+            // Quyết định endpoint dựa trên kiểm tra localhost
+            _endpoint = isLocalhost ? configuration["MinIO:Endpoint"] : "192.168.1.40:9000";  // Nếu không phải localhost thì dùng 192.168.1.40
+
             var accessKey = configuration["MinIO:AccessKey"];
             var secretKey = configuration["MinIO:SecretKey"];
             _bucketName = configuration["MinIO:BucketName"];
@@ -22,6 +30,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                 .WithCredentials(accessKey, secretKey)
                 .Build();
         }
+
 
         public async Task<string> UploadFileAsync(IFormFile file)
         {
@@ -46,29 +55,33 @@ namespace ShopDoGiaDungAPI.Services.Implementations
                     .WithContentType(file.ContentType));
             }
 
-            // Không tạo Presigned URL ở đây
-            // Chỉ trả về tên tệp
+            // Trả về tên tệp
             return fileName;
         }
 
-        public async Task<string> GetPreSignedUrlAsync(string fileName)
+        public async Task<string> GetPreSignedUrlAsync(string fileName, HttpContext httpContext)
         {
-            try
-            {
-                // Tạo Pre-signed URL có thời hạn (ví dụ: 1 giờ)
-                string presignedUrl = await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
-                    .WithBucket(_bucketName)
-                    .WithObject(fileName)
-                    .WithExpiry(3600)); // URL có hiệu lực trong 3600 giây (1 giờ)
+            // Kiểm tra nếu ứng dụng chạy trên localhost hay không
+            var isLocalhost = httpContext.Request.Host.Host == "localhost" || httpContext.Request.Host.Host == "127.0.0.1";
 
-                return presignedUrl;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Lỗi tạo Pre-signed URL: {ex.Message}");
-                return null;
-            }
+            // Quyết định dùng localhost hay IP dựa trên kiểm tra
+            var host = isLocalhost ? "localhost" : "192.168.1.40";  // Chọn địa chỉ host phù hợp
+            var protocol = "http";  
+            var port = "9000";  // Cổng MinIO
+
+            // Tạo URL Presigned từ MinIO
+            string presignedUrl = await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(fileName)
+                .WithExpiry(3600)); // URL có hiệu lực trong 3600 giây (1 giờ)
+
+            // Tạo lại URL có cổng và host phù hợp
+            Uri minioUri = new Uri(presignedUrl);
+            string finalUrl = $"{protocol}://{host}:{port}{minioUri.AbsolutePath}{minioUri.Query}";
+
+            return finalUrl;
         }
+
 
         public async Task DeleteFileAsync(string fileName)
         {

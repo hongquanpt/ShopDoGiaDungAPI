@@ -46,7 +46,7 @@ namespace ShopDoGiaDungAPI.Services.Implementations
         }
 
 
-        public async Task<string> GetPreSignedUrlAsync(string fileName)
+        public async Task<string> GetPreSignedUrlAsync(string fileName, HttpContext httpContext)
         {
             try
             {

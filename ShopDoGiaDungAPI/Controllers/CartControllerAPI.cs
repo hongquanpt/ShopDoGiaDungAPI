@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using ShopDoGiaDungAPI.Attributes;
 using ShopDoGiaDungAPI.DTO;
+using ShopDoGiaDungAPI.Services;
 using ShopDoGiaDungAPI.Services.Interfaces;
 using System.Security.Claims;
 
@@ -17,10 +18,12 @@ namespace ShopDoGiaDungAPI.Controllers
     {
         private readonly ICartService _cartService;
         private readonly IHubContext<OrderHub> _orderHubContext;
-        public CartControllerAPI(ICartService cartService, IHubContext<OrderHub> orderHubContext)
+        private readonly ILogService _logService;
+        public CartControllerAPI(ICartService cartService, IHubContext<OrderHub> orderHubContext, ILogService logService)
         {
             _cartService = cartService;
             _orderHubContext = orderHubContext;
+            _logService = logService;
         }
 
         [AllowAnonymous]
@@ -71,44 +74,55 @@ namespace ShopDoGiaDungAPI.Controllers
         }
 
         [AllowAnonymous]
-        // POST: api/CartControllerAPI/ThanhToan
         [HttpPost("ThanhToan")]
         public async Task<JsonResult> ThanhToan([FromBody] ThongTinThanhToan thanhToan)
         {
-            // Kiểm tra user đăng nhập
+            // Kiểm tra user đăng nhập, nhưng thay vì trả về Unauthorized, ta sử dụng "Khách lai vãng"
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
+            string userIdForLog;
+            int userId = 0; // giá trị mặc định, dùng cho checkout nếu có
+
+            if (userIdClaim != null)
             {
-                return new JsonResult(new { status = false, message = "User not authenticated" });
+                userIdForLog = userIdClaim.Value;
+                userId = int.Parse(userIdClaim.Value);
+            }
+            else
+            {
+                userIdForLog = "Khách lai vãng";
+                // Nếu không có userId, tùy theo logic checkout, có thể gán một giá trị mặc định hoặc xử lý khác
+                // Ở đây ta để userId = 0, nhưng nên xem xét logic _cartService.Checkout cho trường hợp người dùng chưa đăng nhập
             }
 
-            int userId = int.Parse(userIdClaim.Value);
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
+            // Ghi log: Thanh toán đơn hàng
+            await _logService.InsertLogAsync(
+                userId: userIdForLog,
+                action: "Thanh Toán",
+                objects: $"ThongTinThanhToan: Ten={thanhToan.ten}, SDT={thanhToan.sdt}, DiaChi={thanhToan.diaChi}",
+                ip: ip
+            );
 
             var checkoutResult = await _cartService.Checkout(thanhToan, userId);
-        
-            dynamic resultValue = checkoutResult.Value;
 
+            dynamic resultValue = checkoutResult.Value;
             bool status = resultValue.status;
             if (status)
             {
-
                 var newOrderInfo = new
                 {
                     Ten = thanhToan.ten,
                     SDT = thanhToan.sdt,
                     DiaChi = thanhToan.diaChi,
-
                     NgayLap = System.DateTime.Now
                 };
 
-
                 await _orderHubContext.Clients.All.SendAsync("ReceiveNewOrder", newOrderInfo);
-
             }
-
 
             return checkoutResult;
         }
+
     }
 }
